@@ -435,8 +435,8 @@ body{background:var(--bg);color:var(--text)}
   width:calc(100% - 24px);
   margin:12px;
   border-radius:12px;
-  background:#051627;
-  border:1px solid rgba(255,213,47,.25);
+  background:#ffffff;
+  border:1px solid #ececec;
 }
 .apollo-system-brand img{
   display:block;
@@ -490,3 +490,11 @@ body{background:var(--bg);color:var(--text)}
   .site-header .brand-name { font-size: 16px; }
   .site-header .header-inner > .actions .btn { font-size: 12px; padding-inline: 7px; }
 }
+
+/* Logo oficial Apollo: fundo branco para garantir contraste do símbolo preto. */
+.apollo-public-logo{display:block;width:clamp(104px,12vw,158px);height:auto;max-height:64px;object-fit:contain;object-position:left center;flex:0 1 auto}
+.auth-card > .brand{display:flex;align-items:center;justify-content:flex-start;min-height:76px;width:100%;background:#fff;border-radius:12px}
+.auth-card .apollo-public-logo{width:190px;max-width:100%;max-height:128px;margin:0 auto;object-position:center}
+.apollo-system-brand{background:#fff!important;border-color:#e8e8e8!important}
+.apollo-system-brand img{max-height:112px;object-fit:contain}
+@media(max-width:700px){.site-header .brand{flex:1 1 100%;justify-content:center;min-height:58px}.site-header .apollo-public-logo{width:118px;max-height:58px;object-position:center}.auth-card .apollo-public-logo{width:170px}}

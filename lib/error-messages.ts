@@ -26,6 +26,15 @@ export function friendlySupabaseError(error: any, fallback = "Não foi possível
   if (message.includes("invalid input syntax for type date")) {
     return "Uma das datas informadas é inválida. Use uma data válida ou deixe o campo em branco.";
   }
+  if (message.includes("database error saving new user") || message.includes("error saving new user")) {
+    return "O Supabase recusou a criação do perfil. Isso normalmente indica uma migration pendente ou erro na função handle_new_user. Confira o SQL Editor do Supabase e a tabela public.profiles; o detalhe técnico foi registrado no console do navegador.";
+  }
+  if (message.includes("captcha") || message.includes("security check") || message.includes("verification failed")) {
+    return "A verificação de segurança falhou ou expirou. Marque novamente a caixa de verificação e tente de novo.";
+  }
+  if (message.includes("signup is disabled") || message.includes("signups not allowed")) {
+    return "O cadastro está desativado nas configurações de autenticação do Supabase. Habilite novos usuários em Authentication → Settings.";
+  }
   if (message.includes("email not confirmed") || message.includes("email not verified")) {
     return "Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada e a pasta de spam.";
   }

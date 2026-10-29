@@ -87,8 +87,7 @@ export default function LoginPage() {
     <main className="auth-page">
       <div className="auth-card">
         <Link className="brand" href="/">
-          <span className="brand-mark" aria-hidden="true" />
-          <span className="brand-name brand-minhas-aves">Minhas Aves</span>
+          <img className="apollo-public-logo" src="/branding/apollo-logo.png" alt="Apollo — Gestão de Aves" />
         </Link>
         <h1 style={{ marginTop: 30 }}>Entrar</h1>
         <p>Acesse seu plantel e continue de onde parou.</p>

@@ -11,7 +11,7 @@ A landing page, SEO, páginas públicas, login e cadastro apresentam a marca **M
 
 ## Arquivos de marca
 
-- `public/branding/apollo-logo.png`: logo completo Apollo fornecido pelo usuário, para a interface interna.
+- `public/branding/apollo-logo.png`: logo oficial Apollo fornecido pelo usuário, aplicado na interface interna e nas telas públicas.
 - `public/branding/minhas-aves-icon.png`: símbolo da ave para a marca pública Minhas Aves.
 - `app/icon.png`: ícone do site/app baseado no símbolo da ave.
 
