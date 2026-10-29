@@ -4,7 +4,7 @@ import { isAmadorTrialActive, PLAN_FEATURES } from "./plans";
 export async function ensureAmadorTrialOnFirstUse(supabase: SupabaseClient<any>, userId: string, feature: string) {
   const { data: profile } = await supabase
     .from("profiles")
-    .select("plan,role,amador_trial_eligible,amador_trial_started_at,amador_trial_ends_at")
+    .select("plan,role,full_name,criatorio_name,criatorio_logo_path,city,state,phone,amador_trial_eligible,amador_trial_started_at,amador_trial_ends_at")
     .eq("id", userId)
     .maybeSingle();
 
