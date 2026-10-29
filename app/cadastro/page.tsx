@@ -38,7 +38,7 @@ export default function CadastroPage() {
       if (!(await validateCaptcha())) return;
       const supabase = createClient();
       const {data,error}=await supabase.auth.signUp({
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         password,
         options:{
           data:{full_name:name.trim(),criatorio_name:criatorio.trim()},

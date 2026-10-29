@@ -13,7 +13,7 @@ begin
   limit 1;
 
   if v_user_id is null then
-    raise exception 'Conta não encontrada. Peça ao veterinário para criar a conta com o e-mail kaique_marquess@hotmail.com e confirmar o e-mail; depois execute este SQL novamente.';
+    raise exception 'Conta não encontrada em auth.users para kaique_marquess@hotmail.com. Execute primeiro supabase/diagnostico_cadastro.sql; se a consulta não retornar usuário, corrija o cadastro no Auth antes de executar este SQL novamente.';
   end if;
 
   insert into public.profiles (

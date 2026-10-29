@@ -257,3 +257,8 @@ O sistema impede o cadastro/reutilização de um número de anilha já utilizado
 - Adicionado `README_CADASTRO_VETERINARIO_KAIQUE.md` com a sequência de ativação.
 - Ajustado o cabeçalho da landing page em telas pequenas para empilhar a marca e os botões, sem sobreposição entre **Entrar** e **Criar conta**.
 - Não foi criada senha provisória; o veterinário define a própria senha no cadastro.
+
+
+## Correção de cadastro — v0.5.3
+
+Antes de novos cadastros, execute `supabase/migration_fix_signup_trigger.sql` no Supabase SQL Editor. Para investigar falhas, use `supabase/diagnostico_cadastro.sql`. O SQL de ativação do veterinário usa `kaique_marquess@hotmail.com` (dois “s”).
