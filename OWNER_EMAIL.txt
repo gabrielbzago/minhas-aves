@@ -1,0 +1,5 @@
+Owner autorizado para o seletor de planos de teste:
+gabrielbzago@gmail.com
+
+Se usar .env.local, configure:
+OWNER_EMAIL=gabrielbzago@gmail.com
