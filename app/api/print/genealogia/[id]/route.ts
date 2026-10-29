@@ -6,9 +6,9 @@ const esc=(x:any)=>String(x??"—").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt
 async function bird(s:any,id:string){return (await s.from("birds").select("id,name,sex,ring_number,reference_ring_number,genetic_line,father_id,mother_id,species:species_id(common_name,scientific_name)").eq("id",id).maybeSingle()).data}
 export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){
  const {id}=await params; const {supabase,user}=await requireUser();
- let {data:profile}=await supabase.from("profiles").select("plan,role,full_name,criatorio_name,criatorio_logo_path,amador_trial_eligible,amador_trial_started_at,amador_trial_ends_at").eq("id",user.id).maybeSingle();
+ const {data:profileData}=await supabase.from("profiles").select("plan,role,full_name,criatorio_name,criatorio_logo_path,amador_trial_eligible,amador_trial_started_at,amador_trial_ends_at").eq("id",user.id).maybeSingle();
  const trial=await ensureAmadorTrialOnFirstUse(supabase,user.id,"imprimir-genealogia");
- profile=profile ? { ...profile, ...(trial.profile || {}) } : null;
+ const profile: any = profileData ? { ...profileData, ...(trial.profile || {}) } : null;
  if(!profile|| (effectivePlan(profile.plan,profile.role)==="free" && !trial.active))return new NextResponse("A impressão da genealogia está disponível somente nos planos pagos.",{status:403});
  const root=await bird(supabase,id); if(!root)return new NextResponse("Ave não encontrada.",{status:404});
  const father=root.father_id?await bird(supabase,root.father_id):null, mother=root.mother_id?await bird(supabase,root.mother_id):null;
