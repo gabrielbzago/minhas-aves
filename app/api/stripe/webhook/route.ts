@@ -7,6 +7,17 @@ function unixDate(value: number | null | undefined) {
   return value ? new Date(value * 1000).toISOString() : null;
 }
 
+// Nas versões recentes da API Stripe, o período está nos itens da assinatura.
+function subscriptionPeriodStart(subscription: Stripe.Subscription | null | undefined) {
+  const legacyValue = (subscription as (Stripe.Subscription & { current_period_start?: number }) | null | undefined)?.current_period_start;
+  return legacyValue ?? (subscription?.items.data[0] as ({ current_period_start?: number } | undefined))?.current_period_start;
+}
+
+function subscriptionPeriodEnd(subscription: Stripe.Subscription | null | undefined) {
+  const legacyValue = (subscription as (Stripe.Subscription & { current_period_end?: number }) | null | undefined)?.current_period_end;
+  return legacyValue ?? (subscription?.items.data[0] as ({ current_period_end?: number } | undefined))?.current_period_end;
+}
+
 function isEntitledStatus(status: Stripe.Subscription.Status | string | null | undefined) {
   return status === "active" || status === "trialing";
 }
@@ -55,8 +66,8 @@ async function applySubscriptionState(
   const plan = entitled && ["amador", "profissional", "lenda"].includes(sub.metadata?.plan || "")
     ? sub.metadata!.plan!
     : "free";
-  const periodStart = unixDate(sub.current_period_start);
-  const periodEnd = unixDate(sub.current_period_end);
+  const periodStart = unixDate(subscriptionPeriodStart(sub));
+  const periodEnd = unixDate(subscriptionPeriodEnd(sub));
   const periodChanged = profile.current_period_start !== periodStart;
 
   const { error } = await admin.from("profiles").update({
@@ -163,8 +174,8 @@ export async function POST(request: Request) {
           stripe_customer_id: typeof session.customer === "string" ? session.customer : null,
           stripe_subscription_id: subscriptionId,
           subscription_status: subscription?.status || "incomplete",
-          current_period_start: unixDate(subscription?.current_period_start),
-          current_period_end: unixDate(subscription?.current_period_end),
+          current_period_start: unixDate(subscriptionPeriodStart(subscription)),
+          current_period_end: unixDate(subscriptionPeriodEnd(subscription)),
           ...(entitled && plan === "lenda"
             ? { lenda_consultation_used: false, lenda_consultation_used_at: null }
             : {}),
@@ -178,14 +189,14 @@ export async function POST(request: Request) {
             p_event_type: event.type,
             p_status: subscription.status,
             p_subscription_id: subscription.id,
-            p_period_start: unixDate(subscription.current_period_start),
-            p_period_end: unixDate(subscription.current_period_end),
+            p_period_start: unixDate(subscriptionPeriodStart(subscription)),
+            p_period_end: unixDate(subscriptionPeriodEnd(subscription)),
             p_note: "Assinatura Lenda iniciada",
           });
           await admin.rpc("create_lenda_payout", {
             p_creator_id: userId,
             p_subscription_id: subscription.id,
-            p_period_start: unixDate(subscription.current_period_start),
+            p_period_start: unixDate(subscriptionPeriodStart(subscription)),
           });
         }
         break;
@@ -207,7 +218,7 @@ export async function POST(request: Request) {
           plan: "free",
           subscription_status: "canceled",
           stripe_subscription_id: subscription.id,
-          current_period_end: unixDate(subscription.current_period_end),
+          current_period_end: unixDate(subscriptionPeriodEnd(subscription)),
         }).eq("id", profile.id);
         if (error) throw error;
 
@@ -219,7 +230,7 @@ export async function POST(request: Request) {
             p_status: "canceled",
             p_subscription_id: subscription.id,
             p_period_start: null,
-            p_period_end: unixDate(subscription.current_period_end),
+            p_period_end: unixDate(subscriptionPeriodEnd(subscription)),
             p_note: "Assinatura cancelada; dados do criatório preservados",
           });
         }

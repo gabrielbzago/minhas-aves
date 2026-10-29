@@ -7,7 +7,7 @@ export async function GET(){
  const {supabase,user}=await requireUser();
  let {data:profile}=await supabase.from("profiles").select("plan,role,full_name,criatorio_name,criatorio_logo_path,city,state,amador_trial_eligible,amador_trial_started_at,amador_trial_ends_at").eq("id",user.id).maybeSingle();
  const trial=await ensureAmadorTrialOnFirstUse(supabase,user.id,"imprimir-plantel");
- profile=trial.profile;
+ profile=profile ? { ...profile, ...(trial.profile || {}) } : null;
  if(!profile|| (effectivePlan(profile.plan,profile.role)==="free" && !trial.active)) return new NextResponse("A impressão do plantel está disponível somente nos planos pagos.",{status:403});
  const {data:birds}=await supabase.from("birds").select("name,sex,status,birth_date,ring_number,ibama_registration_number,genetic_line,species:species_id(common_name,scientific_name)").order("name");
  let logo="";
