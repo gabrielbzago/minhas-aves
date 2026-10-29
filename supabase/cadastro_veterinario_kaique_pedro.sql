@@ -9,11 +9,11 @@ declare
 begin
   select id into v_user_id
   from auth.users
-  where lower(email) = lower('Kaique_marques@hotmail.com')
+  where lower(email) = lower('kaique_marquess@hotmail.com')
   limit 1;
 
   if v_user_id is null then
-    raise exception 'Conta não encontrada. Peça ao veterinário para criar a conta com o e-mail Kaique_marques@hotmail.com e confirmar o e-mail; depois execute este SQL novamente.';
+    raise exception 'Conta não encontrada. Peça ao veterinário para criar a conta com o e-mail kaique_marquess@hotmail.com e confirmar o e-mail; depois execute este SQL novamente.';
   end if;
 
   insert into public.profiles (
