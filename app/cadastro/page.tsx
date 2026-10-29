@@ -38,7 +38,7 @@ export default function CadastroPage() {
       if (!(await validateCaptcha())) return;
       const supabase = createClient();
       const {data,error}=await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
+        email: email.trim(),
         password,
         options:{
           data:{full_name:name.trim(),criatorio_name:criatorio.trim()},
@@ -49,19 +49,8 @@ export default function CadastroPage() {
       setMessage(data.session ? "Conta criada com sucesso! Redirecionando..." : "Conta criada. Verifique seu e-mail para confirmar o cadastro.");
       if(data.session) window.location.href="/dashboard";
     } catch (err:any) {
-      console.error("[Apollo] falha no cadastro", {
-        message: err?.message,
-        code: err?.code,
-        status: err?.status,
-        name: err?.name,
-        details: err?.details,
-        hint: err?.hint,
-      });
-      const friendly = friendlySupabaseError(err, "");
-      const technical = [err?.message, err?.code ? `código ${err.code}` : "", err?.status ? `HTTP ${err.status}` : ""].filter(Boolean).join(" — ");
-      setError(friendly || (technical
-        ? `O Supabase recusou o cadastro: ${technical}. Envie esta mensagem ao suporte para identificar a causa.`
-        : "Não foi possível criar a conta. Abra o console do navegador (F12) para ver o erro técnico."));
+      console.error("[Apollo] falha no cadastro", err);
+      setError(friendlySupabaseError(err,"Não foi possível criar a conta. Confira se as migrations do Supabase foram executadas e se o e-mail ainda não está cadastrado."));
     } finally {
       setLoading(false);
     }
