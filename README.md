@@ -250,3 +250,10 @@ Esta funcionalidade é uma transferência **interna do software** entre contas d
 ## v0.3.2 — Anilha globalmente única
 
 O sistema impede o cadastro/reutilização de um número de anilha já utilizado por qualquer ave real, inclusive aves arquivadas, falecidas ou transferidas. A regra é global entre criadores. Referências genealógicas preservam a anilha histórica em `reference_ring_number` sem reservar o número.
+
+## Atualização 0.4.7 — veterinário e cabeçalho mobile
+
+- Adicionado `supabase/cadastro_veterinario_kaique_pedro.sql` para vincular a conta criada pelo próprio veterinário ao papel profissional e cadastrar os dados da Clínica Vivaz.
+- Adicionado `README_CADASTRO_VETERINARIO_KAIQUE.md` com a sequência de ativação.
+- Ajustado o cabeçalho da landing page em telas pequenas para empilhar a marca e os botões, sem sobreposição entre **Entrar** e **Criar conta**.
+- Não foi criada senha provisória; o veterinário define a própria senha no cadastro.
