@@ -10,6 +10,19 @@ import { Eye, EyeOff } from "lucide-react";
 
 export default function CadastroPage() {
   const [name,setName]=useState(""); const [criatorio,setCriatorio]=useState(""); const [email,setEmail]=useState(""); const [password,setPassword]=useState(""); const [showPassword,setShowPassword]=useState(false); const [message,setMessage]=useState(""); const [error,setError]=useState(""); const [loading,setLoading]=useState(false); const [captchaToken,setCaptchaToken]=useState(""); const [captchaResetKey,setCaptchaResetKey]=useState(0); const captchaConfigured=Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  function getSelectedPlan() {
+    if (typeof window === "undefined") return null;
+    const plan = new URLSearchParams(window.location.search).get("plan") || "";
+    return ["amador", "profissional", "lenda"].includes(plan) ? plan : null;
+  }
+  function getPostSignupPath() {
+    const plan = getSelectedPlan();
+    return plan ? `/api/stripe/checkout?plan=${plan}` : "/dashboard";
+  }
+  function getLoginHref() {
+    const next = getPostSignupPath();
+    return `/login?next=${encodeURIComponent(next)}`;
+  }
   async function validateCaptcha(): Promise<boolean> {
     if (!captchaConfigured) { setError("A proteção antirrobô ainda não foi configurada. Configure NEXT_PUBLIC_TURNSTILE_SITE_KEY e TURNSTILE_SECRET_KEY antes de habilitar o cadastro."); return false; }
     if (!captchaToken) { setError("Conclua a verificação de segurança antes de criar sua conta."); return false; }
@@ -27,7 +40,7 @@ export default function CadastroPage() {
       if (!(await validateCaptcha())) return;
       const {error}=await createClient().auth.signInWithOAuth({
         provider:"google",
-        options:{redirectTo:getAuthRedirectUrl(),queryParams:{access_type:"offline",prompt:"consent"}}
+        options:{redirectTo:getAuthRedirectUrl(getPostSignupPath()),queryParams:{access_type:"offline",prompt:"consent"}}
       });
       if(error) setError(friendlySupabaseError(error,"Não foi possível continuar com o Google."));
     } catch (err) { console.error("[Apollo] falha no cadastro com Google",err); setError(friendlySupabaseError(err,"Não foi possível continuar com o Google.")); }
@@ -44,12 +57,12 @@ export default function CadastroPage() {
         password,
         options:{
           data:{full_name:name.trim(),criatorio_name:criatorio.trim()},
-          emailRedirectTo:getAuthRedirectUrl()
+          emailRedirectTo:getAuthRedirectUrl(getPostSignupPath())
         }
       });
       if(error) { console.error("[Apollo] erro Supabase ao criar conta", {message:error.message,code:error.code,status:error.status,name:error.name}); throw error; }
-      setMessage(data.session ? "Conta criada com sucesso! Redirecionando..." : "Conta criada. Verifique seu e-mail para confirmar o cadastro.");
-      if(data.session) window.location.href="/dashboard";
+      setMessage(data.session ? "Conta criada com sucesso! Vamos abrir o checkout do plano escolhido..." : (getSelectedPlan() ? "Conta criada. Confirme seu e-mail; depois da confirmação, você será encaminhado ao checkout do plano escolhido." : "Conta criada. Verifique seu e-mail para confirmar o cadastro."));
+      if(data.session) window.location.href=getPostSignupPath();
     } catch (err:any) {
       console.error("[Apollo] falha no cadastro", err);
       setError(friendlySupabaseError(err,"Não foi possível criar a conta. Confira se as migrations do Supabase foram executadas e se o e-mail ainda não está cadastrado."));
@@ -62,5 +75,5 @@ export default function CadastroPage() {
 <button type="button" className="google-btn" onClick={signInWithGoogle} disabled={loading || !captchaConfigured || !captchaToken}>
   <span className="google-icon">G</span><span>Cadastrar com Google</span>
 </button>
-<p style={{fontSize:13,marginTop:20}}>Já possui conta? <Link href="/login" style={{color:"var(--primary-dark)",fontWeight:700}}>Entrar</Link></p></div></main>
+<p style={{fontSize:13,marginTop:20}}>Já possui conta? <Link href={getLoginHref()} style={{color:"var(--primary-dark)",fontWeight:700}}>Entrar</Link></p></div></main>
 }
