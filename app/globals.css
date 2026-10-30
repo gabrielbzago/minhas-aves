@@ -620,3 +620,17 @@ body{background:var(--bg);color:var(--text)}
 .ribbon-product-icon{width:36px;height:36px;display:grid;place-items:center;border-radius:10px;background:#fff6dc;font-size:19px;flex:0 0 auto}
 .ribbon-cta{font-size:10px;font-weight:850;color:#876719;white-space:nowrap;margin-left:5px}
 @media(max-width:760px){.sponsor-ribbon-inner{min-height:0;justify-content:flex-start;gap:12px;overflow-x:auto;padding-top:8px;padding-bottom:8px}.sponsor-ribbon-label{display:none}.ribbon-sponsor img{width:54px;height:40px}.ribbon-fm img{width:64px}.ribbon-agro img{width:40px;height:40px}.ribbon-sponsor strong,.ribbon-product strong{font-size:11px}.ribbon-sponsor small,.ribbon-product small{font-size:9px}.ribbon-divider{height:32px}.ribbon-product{min-width:240px}.ribbon-cta{font-size:9px}}
+
+
+/* Apollo 0.5.11 — copy Agro Zago e opções de encarte */
+.ribbon-product-info{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ribbon-seal-links{display:flex;flex-wrap:wrap;gap:5px;margin-top:3px}
+.ribbon-seal-link{display:inline-flex;align-items:center;gap:3px;padding:4px 7px;border-radius:999px;font-size:9px;font-weight:850;text-decoration:none;white-space:nowrap;border:1px solid transparent}
+.ribbon-seal-link.green{color:#17633d;background:#e8f6ed;border-color:#c6e7d1}
+.ribbon-seal-link.blue{color:#18558e;background:#eaf3ff;border-color:#cbdff7}
+.encarte-product-card.green-seal .product-kicker,.encarte-product-card.green-seal .product-link{color:#217447}
+.encarte-product-card.blue-seal .product-kicker,.encarte-product-card.blue-seal .product-link{color:#2165a5}
+.encarte-product-card.green-seal .encarte-product-visual{background:#e9f5e9}
+.encarte-product-card.blue-seal .encarte-product-visual{background:#eaf3ff}
+.encarte-product-copy p strong{font-weight:850;color:var(--text)}
+@media(max-width:760px){.ribbon-product{min-width:270px}.ribbon-seal-link{font-size:8px;padding:4px 6px}}
