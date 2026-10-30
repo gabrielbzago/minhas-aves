@@ -5,7 +5,6 @@ export const dynamic = "force-static";
 
 export default function Home(){return <><header className="site-header"><div className="container header-inner"><Link href="/" className="brand"><img className="apollo-public-logo" src="/branding/apollo-logo.png" alt="Apollo — Gestão de Aves" /></Link><nav className="nav"><a href="#recursos">Recursos</a><a href="#modulos">Módulos</a><a href="#calendario">Calendário</a><a href="#planos">Planos</a><a href="#veterinario">Veterinário</a><a href="#quem-usa">Quem usa</a><a href="#parceiros">Parceiros</a></nav><div className="actions" style={{margin:0}}><Link className="btn btn-ghost" href="/login">Entrar</Link><Link className="btn btn-primary" href="/cadastro">Criar conta</Link></div></div></header>
 <div className="sponsor-ribbon" aria-label="Patrocinadores oficiais e produto parceiro"><div className="container sponsor-ribbon-inner">
-  <span className="sponsor-ribbon-label">APOIO OFICIAL</span>
   <a className="ribbon-sponsor ribbon-fm" href="https://fmeletronica.com.br/" target="_blank" rel="noopener noreferrer sponsored"><img src="/sponsors/fm-eletronica.png" alt="FM Eletrônica"/><span><strong>FM Eletrônica</strong><small>Parceira oficial</small></span></a>
   <span className="ribbon-divider" aria-hidden="true"></span>
   <a className="ribbon-sponsor ribbon-agro" href="https://agrozago.com.br/" target="_blank" rel="noopener noreferrer sponsored"><img src="/sponsors/agrozago-logo.webp" alt="Agro Zago"/><span><strong>Agro Zago (Itapassaros)</strong><small>Tudo de melhor para o seu pássaro!</small></span></a>

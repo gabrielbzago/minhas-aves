@@ -634,3 +634,97 @@ body{background:var(--bg);color:var(--text)}
 .encarte-product-card.blue-seal .encarte-product-visual{background:#eaf3ff}
 .encarte-product-copy p strong{font-weight:850;color:var(--text)}
 @media(max-width:760px){.ribbon-product{min-width:270px}.ribbon-seal-link{font-size:8px;padding:4px 6px}}
+
+
+/* Apollo 0.5.12 — faixa de parceiros sem sobreposição em celulares */
+@media(max-width:760px){
+  .sponsor-ribbon-inner{
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    justify-content:flex-start;
+    gap:0;
+    overflow:visible;
+    padding:7px 16px;
+  }
+  .sponsor-ribbon-label{display:none!important}
+  .ribbon-sponsor{
+    width:100%;
+    min-width:0;
+    min-height:62px;
+    box-sizing:border-box;
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    justify-content:flex-start;
+    gap:13px;
+    padding:8px 4px;
+    white-space:normal;
+  }
+  .ribbon-sponsor img{
+    width:58px;
+    height:46px;
+    max-width:58px;
+    flex:0 0 58px;
+    object-fit:contain;
+  }
+  .ribbon-fm img{width:72px;max-width:72px;flex-basis:72px}
+  .ribbon-agro img{width:46px;height:46px;max-width:46px;flex-basis:46px}
+  .ribbon-sponsor span{
+    flex:1 1 auto;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:3px;
+  }
+  .ribbon-sponsor strong,.ribbon-product strong{
+    font-size:12px;
+    line-height:1.25;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+  .ribbon-sponsor small,.ribbon-product small{
+    font-size:10px;
+    line-height:1.3;
+    white-space:normal;
+  }
+  .ribbon-divider{display:none!important}
+  .ribbon-product{
+    width:100%;
+    min-width:0;
+    box-sizing:border-box;
+    display:flex;
+    align-items:flex-start;
+    gap:11px;
+    padding:12px 4px 9px;
+    margin-top:3px;
+    border-top:1px solid #e8ece9;
+  }
+  .ribbon-product-icon{
+    width:40px;
+    height:40px;
+    flex:0 0 40px;
+  }
+  .ribbon-product-info{
+    flex:1 1 auto;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:4px;
+  }
+  .ribbon-seal-links{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    width:100%;
+    margin-top:3px;
+  }
+  .ribbon-seal-link{
+    max-width:100%;
+    white-space:normal;
+    font-size:10px;
+    line-height:1.25;
+  }
+}
