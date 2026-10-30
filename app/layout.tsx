@@ -2,7 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-const siteUrl = "https://www.minhasaves.com.br";
+const siteUrl = "https://minhasaves.com.br";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
