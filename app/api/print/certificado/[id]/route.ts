@@ -10,7 +10,7 @@ async function buildTree(db:any,root:Bird,userId:string){const cache=new Map<str
 export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){
  const {id}=await params;const {supabase,user}=await requireUser();
  const requestUrl = new URL(_.url);
- const requestedTheme = requestUrl.searchParams.get("theme");
+ const requestedTheme = requestUrl.searchParams.get("theme") || requestUrl.searchParams.get("color");
  const themeKey = isCardColorKey(requestedTheme) ? requestedTheme : DEFAULT_CARD_COLOR;
  const maleColor = CARD_COLORS[themeKey].hex;
  const {data:profile,error:profileError}=await supabase.from("profiles").select("plan,role,full_name,criatorio_name,criatorio_logo_path").eq("id",user.id).maybeSingle();
@@ -29,7 +29,7 @@ export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){
   ["Bisavô paterno","Bisavó paterna","Bisavô paterno","Bisavó paterna","Bisavô materno","Bisavó materna","Bisavô materno","Bisavó materna"],
   Array.from({length:16},(_,i)=>i%2===0?"Trisavô":"Trisavó")
  ];
- const normalizedSex=(value:any)=>{const v=String(value??"").trim().toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g,"");return v==="f"||v.startsWith("fem")||v==="female"?"female":v==="m"||v.startsWith("mach")||v==="male"?"male":"unknown"};
+ const normalizedSex=(value:any)=>{const v=String(value??"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");return v==="f"||v.startsWith("fem")||v==="female"?"female":v==="m"||v.startsWith("mach")||v==="male"?"male":"unknown"};
  const node=(b:Bird|null,label:string,main=false)=>`<div class="node ${main?"main ":""}${normalizedSex(b?.sex)}"><small>${esc(label)}</small><strong>${esc(b?.name||"Não informado")}</strong><span>${b?`Anilha: ${esc(b.ring_number||b.reference_ring_number||"—")}`:"Registro genealógico não cadastrado"}</span></div>`;
  const cols=[`<section class="generation root"><h3>${titles[0]}</h3>${node(root,"Identificação da ave",true)}</section>`,...levels.slice(1).map((arr,i)=>`<section class="generation gen-${i+1}"><h3>${titles[i+1]}</h3><div class="nodes">${arr.map((b,j)=>node(b,labels[i][j]||`Ascendente ${j+1}`)).join("")}</div></section>`)].join("");
  const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Certificado genealógico · ${esc(root.name)}</title><style>
