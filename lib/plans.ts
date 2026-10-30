@@ -10,7 +10,7 @@ export type PlanCode = keyof typeof PLAN_INFO;
 const commonPaid = [
   "importacao-anilha", "gestao-anilhas", "gestao-ave", "galeria-fotos", "gestao-documentos",
   "gestao-gaiola", "historico-ave", "comportamento", "genealogia", "painel", "cartao-gaiola",
-  "imprimir-ficha", "imprimir-plantel", "imprimir-genealogia",
+  "imprimir-ficha", "imprimir-plantel", "imprimir-genealogia", "certificado-genealogia",
 ];
 
 export const PLAN_FEATURES: Record<PlanCode, Set<string>> = {
@@ -29,7 +29,7 @@ export const PLAN_BENEFITS: Record<PlanCode, string[]> = {
   ],
   amador: [
     "Tudo do Grátis", "Plantel ilimitado", "Gestão de anilhas", "Fotos, documentos e gaiolas",
-    "Comportamento e registros avançados", "Cartões e impressões", "Impressão de ficha, plantel e genealogia",
+    "Comportamento e registros avançados", "Cartões e impressões", "Impressão de ficha, plantel e genealogia", "Certificado genealógico individual com árvore até trisavós",
   ],
   profissional: [
     "Tudo do Criatório Amador", "Gestão de reprodução", "Doenças e acompanhamento", "Medicamentos",
