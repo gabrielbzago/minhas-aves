@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { Home, Bird, Layers3, CreditCard, Settings, Stethoscope, ShieldCheck, LockKeyhole } from "lucide-react";
+import { Home, Bird, Layers3, CreditCard, Settings, Stethoscope, ShieldCheck, LockKeyhole, CalendarDays } from "lucide-react";
 import SignOutButton from "@/components/sign-out";
 import ExitCreatorPreview from "@/components/exit-creator-preview";
 import MobileDashboardMenu from "@/components/mobile-dashboard-menu";
@@ -14,7 +14,7 @@ const moduleIcon: Record<string,string>={"importacao-anilha":"↥","gestao-anilh
 
 function CreatorSidebar({plan,ownerPreview,isVeterinarian,amadorTrialActive}:{plan:string;ownerPreview:boolean;isVeterinarian:boolean;amadorTrialActive:boolean}){
  const normalized=normalizePlan(plan); const tierLabel=planLabel(normalized);
- const links=[['/dashboard','Visão geral',Home],['/dashboard/plantel','Meu plantel',Bird],['/dashboard/recursos','Recursos',Layers3],['/dashboard/especies','Espécies',Bird],['/dashboard/veterinario/agendar','Veterinário',Stethoscope], ...(isVeterinarian ? [['/dashboard/veterinario','Painel veterinário',Stethoscope] as const] : []),['/dashboard/assinatura','Assinatura',CreditCard],['/dashboard/configuracoes','Configurações',Settings],['/dashboard/transferencias','Transferências',Bird]] as const;
+ const links=[['/dashboard','Visão geral',Home],['/dashboard/plantel','Meu plantel',Bird],['/dashboard/calendario','Calendário',CalendarDays],['/dashboard/recursos','Recursos',Layers3],['/dashboard/especies','Espécies',Bird],['/dashboard/veterinario/agendar','Veterinário',Stethoscope], ...(isVeterinarian ? [['/dashboard/veterinario','Painel veterinário',Stethoscope] as const] : []),['/dashboard/assinatura','Assinatura',CreditCard],['/dashboard/configuracoes','Configurações',Settings],['/dashboard/transferencias','Transferências',Bird]] as const;
  const modules=FEATURES;
  return <aside className="sidebar creator-sidebar"><div className="apollo-system-brand"><img src="/branding/apollo-logo.png" alt="Apollo — Gestão de Criatórios" /></div>{ownerPreview&&<div className="preview-banner"><span>Modo teste</span><strong>{tierLabel}</strong></div>}<nav className="side-nav">{links.map(([href,label,Icon])=><Link key={href} href={href}><Icon size={17}/><span>{label}</span></Link>)}</nav><div className="side-section"><div className="side-section-title">Módulos do plano</div><div className="side-modules">{modules.map(f=>{const unlocked=hasFeatureAccess(normalized,f.code,{role:isVeterinarian?"veterinarian":"creator",eligible:amadorTrialActive,startedAt:amadorTrialActive?new Date(Date.now()-1000).toISOString():null,endsAt:amadorTrialActive?new Date(Date.now()+86400000).toISOString():null}); return <Link key={f.code} href={`/dashboard/recursos?modulo=${f.code}`} className={`side-module ${unlocked?"":"side-module-locked"}`} title={unlocked?f.title:(f.code==='modulo-veterinario'&&normalized==='amador'&&!amadorTrialActive?'Teste do Amador por 30 dias no primeiro uso':`Disponível no ${f.tier==='amador'?'Criatório Amador':f.tier==='profissional'?'Criatório Profissional':'Criador Lenda'}`)}><span>{moduleIcon[f.code]||'•'}</span><span>{f.title}</span>{!unlocked&&<LockKeyhole size={12}/>}</Link>})}</div></div>{ownerPreview&&<ExitCreatorPreview/>}<SignOutButton/></aside>
 }

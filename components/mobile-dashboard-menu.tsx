@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Home, Bird, Layers3, CreditCard, Settings, Stethoscope, LockKeyhole, X, Menu } from "lucide-react";
+import { Home, Bird, Layers3, CreditCard, Settings, Stethoscope, LockKeyhole, CalendarDays, X, Menu } from "lucide-react";
 import { FEATURES } from "@/lib/features";
 import { hasFeature, normalizePlan, planLabel, hasFeatureAccess } from "@/lib/plans";
 
@@ -11,6 +11,7 @@ const moduleIcon: Record<string,string>={"importacao-anilha":"↥","gestao-anilh
 const baseLinks=[
   ["/dashboard","Visão geral",Home],
   ["/dashboard/plantel","Meu plantel",Bird],
+  ["/dashboard/calendario","Calendário",CalendarDays],
   ["/dashboard/recursos","Recursos",Layers3],
   ["/dashboard/especies","Espécies",Bird],
   ["/dashboard/veterinario/agendar","Veterinário",Stethoscope],
