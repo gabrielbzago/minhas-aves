@@ -566,3 +566,38 @@ body{background:var(--bg);color:var(--text)}
 .smart-reminder small{font-size:9px;color:var(--muted)}
 .smart-reminders-empty{padding:15px;border:1px dashed #cfe5d9;border-radius:13px;background:#fbfffd;color:#527564;font-size:12px;line-height:1.6}
 @media(max-width:700px){.smart-reminders{padding:15px}.smart-reminders-head h2{font-size:17px}.smart-reminder-grid{grid-template-columns:1fr}.smart-reminder{padding:12px}}
+
+
+/* Apollo 0.5.9 — patrocinadores oficiais e encartes parceiros */
+.official-sponsors-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;max-width:980px;margin:0 auto 42px}
+.official-sponsor-card{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;padding:25px 24px 24px;border:1px solid var(--line);border-radius:22px;background:#fff;box-shadow:0 12px 35px rgba(24,52,42,.07);overflow:hidden}
+.official-sponsor-card:before{content:"";position:absolute;inset:0 0 auto;height:5px;background:linear-gradient(90deg,#b88628,#e6c76b)}
+.agrozago-sponsor:before{background:linear-gradient(90deg,#174c3d,#b58a2d)}
+.sponsor-brandline{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sponsor-official-tag{font-size:9px;font-weight:900;letter-spacing:.12em;color:#8a6828;background:#fbf5e7;border:1px solid #eee0bd;padding:6px 9px;border-radius:999px}
+.sponsor-mini-mark{font-size:11px;font-weight:900;color:#18342a;letter-spacing:.08em}
+.sponsor-logo-wrap{height:112px;width:100%;display:flex;align-items:center;justify-content:center;margin:18px 0 12px}
+.sponsor-logo-wrap img{max-width:88%;max-height:100%;object-fit:contain}
+.sponsor-logo-wrap.agrozago-logo img{max-width:120px;max-height:120px}
+.official-sponsor-card h3{font-size:20px;margin:5px 0 8px;color:var(--text)}
+.official-sponsor-card p{font-size:13px;line-height:1.65;color:var(--muted);max-width:390px;margin:0 0 18px;flex:1}
+.official-sponsor-card .btn{margin-top:auto}
+.encarte-partner-block{margin:12px auto 32px;max-width:1080px}
+.section-head.compact{margin-bottom:20px}
+.encarte-product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.encarte-product-card{display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:#fff;color:inherit;text-decoration:none;box-shadow:0 10px 28px rgba(24,52,42,.055);transition:transform .18s ease,box-shadow .18s ease}
+.encarte-product-card:hover{transform:translateY(-3px);box-shadow:0 16px 36px rgba(24,52,42,.11)}
+.encarte-product-visual{height:190px;background:#f5f4e9;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.encarte-product-visual img{width:100%;height:100%;object-fit:cover}
+.seal-placeholder{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;background:radial-gradient(circle at 50% 35%,#f9fff8,#e4f2df 70%,#c7dfc0);color:#174c3d}
+.seal-placeholder span{font-size:35px}
+.seal-placeholder strong{font-size:18px;letter-spacing:.12em}
+.seal-placeholder small{font-size:11px;font-weight:700}
+.encarte-product-copy{padding:18px 20px 20px}
+.product-kicker{font-size:9px;letter-spacing:.13em;font-weight:900;color:#7d8d81}
+.encarte-product-copy h3{font-size:17px;margin:7px 0;color:var(--text)}
+.encarte-product-copy p{font-size:12px;line-height:1.6;color:var(--muted);margin:0 0 12px}
+.product-link{font-size:12px;font-weight:850;color:var(--primary-dark)}
+.partner-disclaimer{text-align:center;font-size:10px;line-height:1.5;color:var(--muted);margin:16px auto 0;max-width:760px}
+.community-after-sponsors{max-width:700px;margin:24px auto 0}
+@media(max-width:700px){.official-sponsors-grid,.encarte-product-grid{grid-template-columns:1fr}.official-sponsor-card{padding:22px 18px}.encarte-product-visual{height:170px}.community-after-sponsors{margin-top:18px}}
