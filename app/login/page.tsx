@@ -20,6 +20,23 @@ export default function LoginPage() {
   const captchaConfigured = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
   const router = useRouter();
 
+  function getSafeNextPath() {
+    if (typeof window === "undefined") return "/dashboard";
+    const candidate = new URLSearchParams(window.location.search).get("next");
+    if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//")) return "/dashboard";
+    return candidate;
+  }
+
+  function continueAfterLogin() {
+    const nextPath = getSafeNextPath();
+    if (nextPath !== "/dashboard") {
+      window.location.assign(nextPath);
+      return;
+    }
+    router.push("/dashboard");
+    router.refresh();
+  }
+
   async function validateCaptcha(): Promise<boolean> {
     if (!captchaConfigured) {
       setError("A proteção antirrobô ainda não foi configurada. Configure as chaves do Cloudflare Turnstile antes de habilitar o login.");
@@ -61,7 +78,7 @@ export default function LoginPage() {
       const supabase = createClient();
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: getAuthRedirectUrl() },
+        options: { redirectTo: getAuthRedirectUrl(getSafeNextPath()) },
       });
       if (authError) setError(friendlySupabaseError(authError, "Não foi possível entrar com o Google."));
     } finally {
@@ -78,8 +95,7 @@ export default function LoginPage() {
       if (authError) {
         setError(friendlySupabaseError(authError, "Não foi possível entrar com a chave de acesso. Verifique se você já cadastrou uma Passkey neste dispositivo."));
       } else {
-        router.push("/dashboard");
-        router.refresh();
+        continueAfterLogin();
       }
     } catch (err) {
       setError(friendlySupabaseError(err, "Seu dispositivo ou navegador não conseguiu concluir a autenticação biométrica."));
@@ -98,7 +114,7 @@ export default function LoginPage() {
       if (authError) {
         setError(friendlySupabaseError(authError, "Não foi possível entrar. Verifique seus dados e tente novamente."));
       } else {
-        router.push("/dashboard");
+        continueAfterLogin();
       }
     } finally {
       setLoading(false);
