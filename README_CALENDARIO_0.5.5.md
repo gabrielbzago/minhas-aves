@@ -24,3 +24,12 @@ A data automática é um lembrete operacional calculado a partir da data de nasc
 
 ## Divulgação pública — v0.5.6
 A página inicial (`app/page.tsx`) agora apresenta o calendário reprodutivo e de torneios em uma seção própria, detalha os recursos para fêmeas e machos, inclui agenda mensal/diária e histórico editável, amplia a lista de módulos e direciona visitantes para cadastro e planos de assinatura. Os planos e links de checkout existentes foram preservados.
+
+
+## v0.5.8 — Lembretes inteligentes
+
+- Postura: seleção de 2 ou 3 ovos e estimativa automática da data de início do choco a partir do primeiro ovo, com possibilidade de ajuste manual.
+- Choco: lembretes no 11º, 12º e 13º dia, contando o primeiro dia de choco como dia 1. Encerram ao registrar nascimento ou após o 13º dia.
+- Anilhamento: lembretes diários do 3º ao 7º dia após o nascimento. Encerram ao registrar anilhamento realizado ou após o 7º dia.
+- Os alertas são exibidos dentro do painel Calendário; esta versão não envia push, SMS ou e-mail.
+- Execute `supabase/migration_lembretes_inteligentes_0_5_8.sql`.

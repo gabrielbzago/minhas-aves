@@ -546,3 +546,23 @@ body{background:var(--bg);color:var(--text)}
 .calendar-feature-strip strong{font-size:13px;color:var(--text)}
 .calendar-feature-strip span{font-size:12px;line-height:1.6;color:var(--muted)}
 @media(max-width:700px){.calendar-feature-strip{grid-template-columns:1fr}}
+
+
+/* Apollo 0.5.8 — lembretes inteligentes de reprodução */
+.smart-reminders{margin:18px 0 20px;padding:20px;border:1px solid #dcebe4;border-radius:20px;background:linear-gradient(135deg,#ffffff 0%,#f0faf5 100%);box-shadow:0 8px 28px rgba(31,92,67,.055)}
+.smart-reminders-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:14px}
+.smart-reminders-kicker{font-size:9px;font-weight:900;letter-spacing:.13em;color:#2f8f68}
+.smart-reminders-head h2{font-size:19px;margin:5px 0 4px;color:var(--text)}
+.smart-reminders-head p{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
+.smart-reminders-count{white-space:nowrap;border-radius:999px;padding:7px 11px;background:#e4f6ee;color:#267b59;font-size:11px;font-weight:850}
+.smart-reminder-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.smart-reminder{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:15px;border:1px solid #f0dfb9;background:#fffaf0}
+.smart-reminder.hatch{border-color:#f0dfb9;background:#fffaf0}
+.smart-reminder.ring{border-color:#d7e6f5;background:#f5f9ff}
+.smart-reminder-icon{width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;border-radius:12px;background:#fff0ce;font-size:21px}
+.smart-reminder.ring .smart-reminder-icon{background:#e5effc}
+.smart-reminder strong{font-size:12px;line-height:1.5;display:block;color:var(--text)}
+.smart-reminder p{font-size:11px;color:var(--muted);margin:5px 0;line-height:1.5}
+.smart-reminder small{font-size:9px;color:var(--muted)}
+.smart-reminders-empty{padding:15px;border:1px dashed #cfe5d9;border-radius:13px;background:#fbfffd;color:#527564;font-size:12px;line-height:1.6}
+@media(max-width:700px){.smart-reminders{padding:15px}.smart-reminders-head h2{font-size:17px}.smart-reminder-grid{grid-template-columns:1fr}.smart-reminder{padding:12px}}
