@@ -10,7 +10,7 @@ export type PlanCode = keyof typeof PLAN_INFO;
 const commonPaid = [
   "importacao-anilha", "gestao-anilhas", "gestao-ave", "galeria-fotos", "gestao-documentos",
   "gestao-gaiola", "historico-ave", "comportamento", "genealogia", "painel", "cartao-gaiola",
-  "imprimir-ficha", "imprimir-plantel", "imprimir-genealogia", "certificado-genealogia",
+  "imprimir-ficha", "imprimir-plantel", "certificado-genealogia",
 ];
 
 export const PLAN_FEATURES: Record<PlanCode, Set<string>> = {

@@ -1,7 +1,7 @@
 export type FeatureCode =
   | "importacao-anilha" | "gestao-anilhas" | "gestao-ave" | "galeria-fotos"
   | "gestao-documentos" | "gestao-gaiola" | "historico-ave" | "comportamento"
-  | "genealogia" | "painel" | "cartao-gaiola" | "imprimir-ficha" | "imprimir-plantel" | "imprimir-genealogia" | "certificado-genealogia" | "sms" | "reproducao" | "doencas"
+  | "genealogia" | "painel" | "cartao-gaiola" | "imprimir-ficha" | "imprimir-plantel" | "certificado-genealogia" | "sms" | "reproducao" | "doencas"
   | "medicamentos" | "genotipagem" | "sexagem" | "agendar-veterinario" | "consulta-veterinaria-inclusa" | "modulo-veterinario";
 
 export const FEATURES: {code: FeatureCode; title: string; description: string; tier: "free" | "amador" | "profissional" | "lenda"}[] = [
@@ -18,7 +18,6 @@ export const FEATURES: {code: FeatureCode; title: string; description: string; t
  {code:"cartao-gaiola",title:"Cartão de Gaiola",description:"Pré-visualize o cartão gratuitamente; a impressão é liberada nos planos pagos.",tier:"free"},
  {code:"imprimir-ficha",title:"Imprimir ficha da ave",description:"Ficha completa em formato A4, com identidade do criatório, genealogia e histórico veterinário.",tier:"amador"},
  {code:"imprimir-plantel",title:"Imprimir plantel",description:"Lista organizada de todo o plantel para impressão.",tier:"amador"},
- {code:"imprimir-genealogia",title:"Imprimir genealogia",description:"Árvore genealógica e descendentes em folha pronta para impressão.",tier:"amador"},
  {code:"certificado-genealogia",title:"Certificado genealógico",description:"Certificado individual A4 com árvore genealógica ampliada até trisavós. Disponível a partir do Criatório Amador.",tier:"amador"},
  {code:"sms",title:"Notificação por SMS",description:"Prepare notificações e lembretes; o envio depende de um provedor configurado.",tier:"profissional"},
  {code:"reproducao",title:"Gestão de Reprodução",description:"Registre casais, acasalamentos, ninhadas e eventos reprodutivos.",tier:"profissional"},

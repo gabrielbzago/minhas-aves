@@ -6,7 +6,7 @@ import { Home, Bird, Layers3, CreditCard, Settings, Stethoscope, LockKeyhole, Ca
 import { FEATURES } from "@/lib/features";
 import { hasFeature, normalizePlan, planLabel, hasFeatureAccess } from "@/lib/plans";
 
-const moduleIcon: Record<string,string>={"importacao-anilha":"↥","gestao-anilhas":"◉","gestao-ave":"🐦","galeria-fotos":"▧","gestao-documentos":"▤","gestao-gaiola":"⌂","historico-ave":"◷",comportamento:"◌",genealogia:"⌘",painel:"▦","cartao-gaiola":"▣","imprimir-ficha":"▤","imprimir-plantel":"☷","imprimir-genealogia":"⌘",sms:"✉",reproducao:"♧",doencas:"✚",medicamentos:"✚",genotipagem:"◇",sexagem:"⚥","agendar-veterinario":"♧","consulta-veterinaria-inclusa":"★","modulo-veterinario":"🩺"};
+const moduleIcon: Record<string,string>={"importacao-anilha":"↥","gestao-anilhas":"◉","gestao-ave":"🐦","galeria-fotos":"▧","gestao-documentos":"▤","gestao-gaiola":"⌂","historico-ave":"◷",comportamento:"◌",genealogia:"⌘",painel:"▦","cartao-gaiola":"▣","imprimir-ficha":"▤","imprimir-plantel":"☷",sms:"✉",reproducao:"♧",doencas:"✚",medicamentos:"✚",genotipagem:"◇",sexagem:"⚥","agendar-veterinario":"♧","consulta-veterinaria-inclusa":"★","modulo-veterinario":"🩺"};
 
 const baseLinks=[
   ["/dashboard","Visão geral",Home],

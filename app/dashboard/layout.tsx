@@ -10,7 +10,7 @@ import MobileDashboardMenu from "@/components/mobile-dashboard-menu";
 import { effectivePlan, normalizePlan, planLabel, hasFeatureAccess, isAmadorTrialActive } from "@/lib/plans";
 import { FEATURES } from "@/lib/features";
 
-const moduleIcon: Record<string,string>={"importacao-anilha":"↥","gestao-anilhas":"◉","gestao-ave":"🐦","galeria-fotos":"▧","gestao-documentos":"▤","gestao-gaiola":"⌂","historico-ave":"◷",comportamento:"◌",genealogia:"⌘",painel:"▦","cartao-gaiola":"▣","imprimir-ficha":"▤","imprimir-plantel":"☷","imprimir-genealogia":"⌘",sms:"✉",reproducao:"♧",doencas:"✚",medicamentos:"✚",genotipagem:"◇",sexagem:"⚥","agendar-veterinario":"♧","consulta-veterinaria-inclusa":"★"};
+const moduleIcon: Record<string,string>={"importacao-anilha":"↥","gestao-anilhas":"◉","gestao-ave":"🐦","galeria-fotos":"▧","gestao-documentos":"▤","gestao-gaiola":"⌂","historico-ave":"◷",comportamento:"◌",genealogia:"⌘",painel:"▦","cartao-gaiola":"▣","imprimir-ficha":"▤","imprimir-plantel":"☷",sms:"✉",reproducao:"♧",doencas:"✚",medicamentos:"✚",genotipagem:"◇",sexagem:"⚥","agendar-veterinario":"♧","consulta-veterinaria-inclusa":"★"};
 
 function CreatorSidebar({plan,ownerPreview,isVeterinarian,amadorTrialActive}:{plan:string;ownerPreview:boolean;isVeterinarian:boolean;amadorTrialActive:boolean}){
  const normalized=normalizePlan(plan); const tierLabel=planLabel(normalized);
