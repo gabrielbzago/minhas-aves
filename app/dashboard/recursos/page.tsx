@@ -5,7 +5,12 @@ import { FEATURES, type FeatureCode } from "@/lib/features";
 import ModuleManager from "@/components/module-manager";
 
 function targetCheckout(plan: string) {
-  return `/api/stripe/checkout?plan=${encodeURIComponent(plan)}`;
+  const paymentLinks: Record<string, string> = {
+    amador: "https://buy.stripe.com/eVqbJ096F9U6aRjdz41B600",
+    profissional: "https://buy.stripe.com/cNieVcdmV5DQe3v3Yu1B601",
+    lenda: "https://buy.stripe.com/dRm14m1Ed5DQgbD7aG1B602",
+  };
+  return paymentLinks[plan] || paymentLinks.amador;
 }
 
 export default async function RecursosPage({searchParams}:{searchParams:Promise<{modulo?:string}>}){
