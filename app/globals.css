@@ -601,3 +601,22 @@ body{background:var(--bg);color:var(--text)}
 .partner-disclaimer{text-align:center;font-size:10px;line-height:1.5;color:var(--muted);margin:16px auto 0;max-width:760px}
 .community-after-sponsors{max-width:700px;margin:24px auto 0}
 @media(max-width:700px){.official-sponsors-grid,.encarte-product-grid{grid-template-columns:1fr}.official-sponsor-card{padding:22px 18px}.encarte-product-visual{height:170px}.community-after-sponsors{margin-top:18px}}
+
+
+/* Apollo 0.5.10 — faixa compacta de patrocinadores abaixo do menu */
+.sponsor-ribbon{position:relative;z-index:5;background:#fff;border-bottom:1px solid #e8ece9;box-shadow:0 3px 12px rgba(20,43,34,.035)}
+.sponsor-ribbon-inner{min-height:82px;display:flex;align-items:center;justify-content:center;gap:24px;padding-top:9px;padding-bottom:9px}
+.sponsor-ribbon-label{font-size:9px;font-weight:900;letter-spacing:.13em;color:#8b702e;white-space:nowrap}
+.ribbon-sponsor{display:flex;align-items:center;gap:10px;min-width:0;color:inherit;text-decoration:none;transition:opacity .15s}
+.ribbon-sponsor:hover,.ribbon-product:hover{opacity:.78}
+.ribbon-sponsor img{width:68px;height:48px;object-fit:contain;flex:0 0 auto}
+.ribbon-fm img{width:88px}
+.ribbon-agro img{width:48px;height:48px}
+.ribbon-sponsor span,.ribbon-product span:not(.ribbon-product-icon):not(.ribbon-cta){display:flex;flex-direction:column;gap:3px}
+.ribbon-sponsor strong,.ribbon-product strong{font-size:12px;color:#18342a;line-height:1.2}
+.ribbon-sponsor small,.ribbon-product small{font-size:10px;color:#758078;line-height:1.2}
+.ribbon-divider{width:1px;height:38px;background:#e5e9e5;flex:0 0 auto}
+.ribbon-product{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none;min-width:0}
+.ribbon-product-icon{width:36px;height:36px;display:grid;place-items:center;border-radius:10px;background:#fff6dc;font-size:19px;flex:0 0 auto}
+.ribbon-cta{font-size:10px;font-weight:850;color:#876719;white-space:nowrap;margin-left:5px}
+@media(max-width:760px){.sponsor-ribbon-inner{min-height:0;justify-content:flex-start;gap:12px;overflow-x:auto;padding-top:8px;padding-bottom:8px}.sponsor-ribbon-label{display:none}.ribbon-sponsor img{width:54px;height:40px}.ribbon-fm img{width:64px}.ribbon-agro img{width:40px;height:40px}.ribbon-sponsor strong,.ribbon-product strong{font-size:11px}.ribbon-sponsor small,.ribbon-product small{font-size:9px}.ribbon-divider{height:32px}.ribbon-product{min-width:240px}.ribbon-cta{font-size:9px}}
