@@ -1,23 +1,12 @@
 /**
- * OAuth/email confirmation must return to the exact public origin where the
- * user started the flow. In the browser, window.location.origin is
- * authoritative and prevents a stale NEXT_PUBLIC_* build variable such as
- * http://localhost:3000 from hijacking production redirects.
+ * URL OAuth/callback fixa para produção.
+ * Não depende de window.location.origin nem de variáveis NEXT_PUBLIC_*,
+ * pois uma configuração local antiga não pode redirecionar usuários de produção.
  */
+const PRODUCTION_ORIGIN = "https://minhasaves.com.br";
+
 export function getAuthRedirectUrl(nextPath?: string) {
-  const browserOrigin =
-    typeof window !== "undefined" ? window.location.origin : "";
-
-  const configuredSiteUrl = (
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    ""
-  ).trim().replace(/\/+$/, "");
-
-  const baseUrl = browserOrigin || configuredSiteUrl;
-  if (!baseUrl) throw new Error("URL pública do Apollo não configurada.");
-
-  const redirectUrl = new URL("/auth/confirm", baseUrl);
+  const redirectUrl = new URL("/auth/confirm", PRODUCTION_ORIGIN);
   if (nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")) {
     redirectUrl.searchParams.set("next", nextPath);
   }
