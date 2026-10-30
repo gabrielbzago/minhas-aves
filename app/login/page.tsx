@@ -6,10 +6,12 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { friendlySupabaseError } from "@/lib/error-messages";
 import TurnstileCaptcha from "@/components/turnstile-captcha";
+import { Eye, EyeOff, Fingerprint } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
@@ -66,6 +68,25 @@ export default function LoginPage() {
     }
   }
 
+  async function signInWithPasskey() {
+    setLoading(true);
+    setError("");
+    try {
+      const supabase = createClient();
+      const { error: authError } = await supabase.auth.signInWithPasskey();
+      if (authError) {
+        setError(friendlySupabaseError(authError, "Não foi possível entrar com a chave de acesso. Verifique se você já cadastrou uma Passkey neste dispositivo."));
+      } else {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } catch (err) {
+      setError(friendlySupabaseError(err, "Seu dispositivo ou navegador não conseguiu concluir a autenticação biométrica."));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function submit(event: FormEvent) {
     event.preventDefault();
     setLoading(true);
@@ -99,13 +120,19 @@ export default function LoginPage() {
           </div>
           <div className="field">
             <label htmlFor="login-password">Senha</label>
-            <input id="login-password" type="password" autoComplete="current-password" required minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} />
+            <div className="password-input-wrap">
+              <input id="login-password" type={showPassword ? "text" : "password"} autoComplete="current-password" required minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} />
+              <button type="button" className="password-visibility" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} aria-pressed={showPassword}>{showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button>
+            </div>
           </div>
           <TurnstileCaptcha onToken={setCaptchaToken} resetKey={captchaResetKey} />
           <button className="btn btn-primary" style={{ width: "100%" }} disabled={loading || !captchaConfigured || !captchaToken}>
             {loading ? "Verificando..." : "Entrar"}
           </button>
         </form>
+        <button type="button" className="passkey-btn" onClick={signInWithPasskey} disabled={loading}>
+          <Fingerprint size={19}/><span>Entrar com biometria / Passkey</span>
+        </button>
         <div className="auth-divider"><span>ou</span></div>
         <button type="button" className="google-btn" onClick={signInWithGoogle} disabled={loading || !captchaConfigured || !captchaToken}>
           <span className="google-icon">G</span><span>Continuar com Google</span>

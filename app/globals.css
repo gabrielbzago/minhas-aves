@@ -498,3 +498,27 @@ body{background:var(--bg);color:var(--text)}
 .apollo-system-brand{background:#fff!important;border-color:#e8e8e8!important}
 .apollo-system-brand img{max-height:112px;object-fit:contain}
 @media(max-width:700px){.site-header .brand{flex:1 1 100%;justify-content:center;min-height:58px}.site-header .apollo-public-logo{width:118px;max-height:58px;object-position:center}.auth-card .apollo-public-logo{width:170px}}
+
+
+/* Acessibilidade nos campos de senha e autenticação por Passkey */
+.password-input-wrap{position:relative;display:flex;align-items:center}
+.password-input-wrap input{padding-right:48px!important}
+.password-visibility{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:9px;background:transparent;color:var(--muted);display:grid;place-items:center}
+.password-visibility:hover{background:var(--primary-soft);color:var(--primary-dark)}
+.passkey-btn{width:100%;min-height:46px;display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid #b9dccc;border-radius:12px;background:#f2fbf7;color:var(--primary-dark);font-weight:750;cursor:pointer;transition:background .18s,border-color .18s}
+.passkey-btn:hover{background:#e7f7ef;border-color:#8dcfb0}
+.passkey-btn:disabled{opacity:.6;cursor:not-allowed}
+.passkey-settings-heading{display:flex;justify-content:space-between;gap:16px;align-items:center;color:var(--primary-dark)}
+.passkey-settings-heading p{color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:0}
+.spin{animation:apollo-spin 1s linear infinite}@keyframes apollo-spin{to{transform:rotate(360deg)}}
+
+/* Páginas legais públicas */
+.legal-document{color:var(--text);line-height:1.75}
+.legal-document h1{font-size:clamp(30px,5vw,44px);line-height:1.15;margin:10px 0 12px;letter-spacing:-.035em}
+.legal-document h2{font-size:20px;line-height:1.35;margin:30px 0 9px;color:var(--text)}
+.legal-document p,.legal-document li{font-size:15px;color:#526b60}
+.legal-document ul,.legal-document ol{padding-left:24px}
+.legal-document li{margin:7px 0}
+.legal-document a:not(.btn){color:var(--primary-dark);text-decoration:underline;text-underline-offset:3px;font-weight:600}
+.legal-document header p{max-width:780px}
+.legal-document .kicker{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--primary-dark)}
