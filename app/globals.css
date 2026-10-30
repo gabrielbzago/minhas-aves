@@ -728,3 +728,145 @@ body{background:var(--bg);color:var(--text)}
     line-height:1.25;
   }
 }
+
+
+/* Apollo v0.5.13 — faixa mobile compacta em uma única linha */
+@media(max-width:760px){
+  .sponsor-ribbon-inner{
+    display:grid!important;
+    grid-template-columns:minmax(0,.95fr) minmax(0,1fr) minmax(0,1.55fr);
+    align-items:center;
+    justify-content:stretch;
+    gap:5px;
+    overflow:hidden;
+    padding:7px 9px!important;
+    min-height:58px!important;
+  }
+  .sponsor-ribbon-label{display:none!important}
+  .ribbon-sponsor{
+    width:auto!important;
+    min-width:0!important;
+    min-height:0!important;
+    height:46px;
+    box-sizing:border-box;
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:4px!important;
+    padding:2px!important;
+    white-space:normal;
+    overflow:hidden;
+  }
+  .ribbon-sponsor img{
+    width:29px!important;
+    height:30px!important;
+    max-width:29px!important;
+    flex:0 0 29px!important;
+    object-fit:contain;
+  }
+  .ribbon-fm img{
+    width:36px!important;
+    max-width:36px!important;
+    flex-basis:36px!important;
+  }
+  .ribbon-agro img{
+    width:27px!important;
+    height:29px!important;
+    max-width:27px!important;
+    flex-basis:27px!important;
+  }
+  .ribbon-sponsor span{
+    min-width:0!important;
+    flex:1 1 auto!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    gap:1px!important;
+    overflow:hidden;
+  }
+  .ribbon-sponsor strong{
+    display:block;
+    width:100%;
+    font-size:8px!important;
+    line-height:1.12!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere;
+  }
+  .ribbon-sponsor small{
+    display:block;
+    width:100%;
+    font-size:7px!important;
+    line-height:1.12!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere;
+  }
+  .ribbon-divider{display:none!important}
+  .ribbon-product{
+    width:auto!important;
+    min-width:0!important;
+    height:46px;
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    gap:4px!important;
+    box-sizing:border-box;
+    padding:2px 0 2px 5px!important;
+    margin:0!important;
+    border:0!important;
+    border-left:1px solid #e5e9e5!important;
+    overflow:hidden;
+  }
+  .ribbon-product-icon{
+    width:22px!important;
+    height:22px!important;
+    flex:0 0 22px!important;
+    border-radius:6px!important;
+    font-size:12px!important;
+  }
+  .ribbon-product-info{
+    min-width:0!important;
+    flex:1 1 auto!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    gap:2px!important;
+    overflow:hidden;
+  }
+  .ribbon-product-info strong{
+    font-size:7.5px!important;
+    line-height:1.1!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere;
+  }
+  .ribbon-product-info small{display:none!important}
+  .ribbon-seal-links{
+    display:flex!important;
+    flex-direction:row!important;
+    flex-wrap:wrap!important;
+    gap:3px!important;
+    width:100%!important;
+    margin:1px 0 0!important;
+  }
+  .ribbon-seal-link{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding:3px 4px!important;
+    font-size:6.8px!important;
+    line-height:1.05!important;
+    white-space:nowrap!important;
+    border-radius:5px!important;
+  }
+}
+@media(max-width:360px){
+  .sponsor-ribbon-inner{grid-template-columns:minmax(0,.9fr) minmax(0,.95fr) minmax(0,1.45fr);gap:3px;padding-left:6px!important;padding-right:6px!important}
+  .ribbon-sponsor img{width:24px!important;max-width:24px!important;flex-basis:24px!important}
+  .ribbon-fm img{width:31px!important;max-width:31px!important;flex-basis:31px!important}
+  .ribbon-agro img{width:23px!important;max-width:23px!important;flex-basis:23px!important}
+  .ribbon-sponsor strong{font-size:7px!important}
+  .ribbon-sponsor small{font-size:6.5px!important}
+  .ribbon-product-icon{display:none!important}
+  .ribbon-product-info strong{font-size:7px!important}
+  .ribbon-seal-link{font-size:6.2px!important;padding:3px 3px!important}
+}
