@@ -21,3 +21,6 @@ No menu do painel, abra **Calendário** ou acesse `/dashboard/calendario`.
 
 ## Observação sobre anilhamento
 A data automática é um lembrete operacional calculado a partir da data de nascimento informada pelo tutor. O intervalo pode ser selecionado entre 3 e 7 dias. O tutor deve confirmar a condição dos filhotes e as orientações aplicáveis antes de realizar o procedimento.
+
+## Divulgação pública — v0.5.6
+A página inicial (`app/page.tsx`) agora apresenta o calendário reprodutivo e de torneios em uma seção própria, detalha os recursos para fêmeas e machos, inclui agenda mensal/diária e histórico editável, amplia a lista de módulos e direciona visitantes para cadastro e planos de assinatura. Os planos e links de checkout existentes foram preservados.
