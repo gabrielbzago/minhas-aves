@@ -9,7 +9,7 @@ export async function GET() {
     const { supabase, user } = await requireUser();
     const { data, error } = await supabase
       .from("calendar_events")
-      .select("*, bird:birds(id,name,sex,ring_number,species:species(common_name))")
+      .select("*, bird:birds!calendar_events_bird_id_fkey(id,name,sex,ring_number,species:species(common_name)), partner_bird:birds!calendar_events_partner_bird_id_fkey(id,name,sex,ring_number)")
       .eq("user_id", user.id)
       .order("event_date", { ascending: true });
     if (error) throw error;
@@ -32,14 +32,21 @@ export async function POST(request: Request) {
     const femaleTypes = new Set(["postura", "gala", "nascimento", "anilhamento"]);
     if (femaleTypes.has(body.event_type) && bird.sex !== "femea") return NextResponse.json({ error: "Este evento reprodutivo deve ser vinculado a uma fêmea." }, { status: 400 });
     if (body.event_type === "torneio" && bird.sex !== "macho") return NextResponse.json({ error: "O calendário de torneios deve ser vinculado a um macho." }, { status: 400 });
+    let partnerBirdId: string | null = null;
+    if (body.event_type === "gala") {
+      if (!body.partner_bird_id) return NextResponse.json({ error: "Selecione o macho que participou da gala." }, { status: 400 });
+      const { data: partner } = await supabase.from("birds").select("id,sex").eq("id", body.partner_bird_id).eq("user_id", user.id).maybeSingle();
+      if (!partner || partner.sex !== "macho") return NextResponse.json({ error: "O parceiro selecionado precisa ser um macho do seu plantel." }, { status: 400 });
+      partnerBirdId = partner.id;
+    }
     const payload = {
-      user_id: user.id, bird_id: bird.id, event_type: body.event_type,
+      user_id: user.id, bird_id: bird.id, partner_bird_id: partnerBirdId, event_type: body.event_type,
       event_date: body.event_date, title: String(body.title).trim(),
       location: clean(body.location), egg_count: clean(body.egg_count),
       chick_count: clean(body.chick_count), song_count: clean(body.song_count),
       ring_days_after: clean(body.ring_days_after), result: clean(body.result), notes: clean(body.notes),
     };
-    const { data, error } = await supabase.from("calendar_events").insert(payload).select("*, bird:birds(id,name,sex,ring_number)").single();
+    const { data, error } = await supabase.from("calendar_events").insert(payload).select("*, bird:birds!calendar_events_bird_id_fkey(id,name,sex,ring_number), partner_bird:birds!calendar_events_partner_bird_id_fkey(id,name,sex,ring_number)").single();
     if (error) throw error;
     // Ao registrar nascimento, cria automaticamente o lembrete de anilhamento na data escolhida (3–7 dias depois).
     if (body.event_type === "nascimento" && body.create_ring_reminder !== false) {
@@ -74,7 +81,14 @@ export async function PUT(request: Request) {
     const femaleTypes = new Set(["postura", "gala", "nascimento", "anilhamento"]);
     if (femaleTypes.has(body.event_type) && bird.sex !== "femea") return NextResponse.json({ error: "Este evento reprodutivo deve ser vinculado a uma fêmea." }, { status: 400 });
     if (body.event_type === "torneio" && bird.sex !== "macho") return NextResponse.json({ error: "O calendário de torneios deve ser vinculado a um macho." }, { status: 400 });
-    const payload = { bird_id: bird.id, event_type: body.event_type, event_date: body.event_date, title: String(body.title).trim(), location: clean(body.location), egg_count: clean(body.egg_count), chick_count: clean(body.chick_count), song_count: clean(body.song_count), ring_days_after: clean(body.ring_days_after), result: clean(body.result), notes: clean(body.notes) };
+    let partnerBirdId: string | null = null;
+    if (body.event_type === "gala") {
+      if (!body.partner_bird_id) return NextResponse.json({ error: "Selecione o macho que participou da gala." }, { status: 400 });
+      const { data: partner } = await supabase.from("birds").select("id,sex").eq("id", body.partner_bird_id).eq("user_id", user.id).maybeSingle();
+      if (!partner || partner.sex !== "macho") return NextResponse.json({ error: "O parceiro selecionado precisa ser um macho do seu plantel." }, { status: 400 });
+      partnerBirdId = partner.id;
+    }
+    const payload = { bird_id: bird.id, partner_bird_id: partnerBirdId, event_type: body.event_type, event_date: body.event_date, title: String(body.title).trim(), location: clean(body.location), egg_count: clean(body.egg_count), chick_count: clean(body.chick_count), song_count: clean(body.song_count), ring_days_after: clean(body.ring_days_after), result: clean(body.result), notes: clean(body.notes) };
     const { data, error } = await supabase.from("calendar_events").update(payload).eq("id", body.id).eq("user_id", user.id).select().single();
     if (error) throw error;
     if (body.event_type === "nascimento") {
