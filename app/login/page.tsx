@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getAuthRedirectUrl } from "@/lib/supabase/auth-redirect";
 import { useRouter } from "next/navigation";
 import { friendlySupabaseError } from "@/lib/error-messages";
 import TurnstileCaptcha from "@/components/turnstile-captcha";
@@ -60,7 +61,7 @@ export default function LoginPage() {
       const supabase = createClient();
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/confirm` },
+        options: { redirectTo: getAuthRedirectUrl() },
       });
       if (authError) setError(friendlySupabaseError(authError, "Não foi possível entrar com o Google."));
     } finally {

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getAuthRedirectUrl } from "@/lib/supabase/auth-redirect";
 import { friendlySupabaseError } from "@/lib/error-messages";
 import TurnstileCaptcha from "@/components/turnstile-captcha";
 import { Eye, EyeOff } from "lucide-react";
@@ -26,7 +27,7 @@ export default function CadastroPage() {
       if (!(await validateCaptcha())) return;
       const {error}=await createClient().auth.signInWithOAuth({
         provider:"google",
-        options:{redirectTo:`${window.location.origin}/auth/confirm`,queryParams:{access_type:"offline",prompt:"consent"}}
+        options:{redirectTo:getAuthRedirectUrl(),queryParams:{access_type:"offline",prompt:"consent"}}
       });
       if(error) setError(friendlySupabaseError(error,"Não foi possível continuar com o Google."));
     } catch (err) { console.error("[Apollo] falha no cadastro com Google",err); setError(friendlySupabaseError(err,"Não foi possível continuar com o Google.")); }
@@ -43,7 +44,7 @@ export default function CadastroPage() {
         password,
         options:{
           data:{full_name:name.trim(),criatorio_name:criatorio.trim()},
-          emailRedirectTo:`${window.location.origin}/auth/confirm`
+          emailRedirectTo:getAuthRedirectUrl()
         }
       });
       if(error) { console.error("[Apollo] erro Supabase ao criar conta", {message:error.message,code:error.code,status:error.status,name:error.name}); throw error; }

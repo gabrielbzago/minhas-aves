@@ -6,11 +6,11 @@ MVP SaaS para gestão de plantel de aves, genealogia, genética, registros e car
 ## Marca e domínio de produção
 
 - **Marca pública e marketing:** Minhas Aves
-- **Domínio oficial:** https://www.minhasaves.com.br
+- **Domínio oficial:** https://minhasaves.com.br
 - **Nome interno do software:** Apollo — Gestão de Criatórios
 - A landing page, login, cadastro e SEO usam Minhas Aves. A área autenticada pode exibir o logo Apollo como identidade do sistema.
 
-Antes de publicar, configure `NEXT_PUBLIC_APP_URL=https://www.minhasaves.com.br` no ambiente de produção, vincule o domínio na hospedagem e ajuste o Site URL/Redirect URLs no Supabase Auth. Configure também a conta Stripe própria de Minhas Aves, com seus próprios Price IDs, chaves e webhook — não reutilize os do TubeX.
+Antes de publicar, configure `NEXT_PUBLIC_APP_URL=https://minhasaves.com.br` no ambiente de produção, vincule o domínio na hospedagem e ajuste o Site URL/Redirect URLs no Supabase Auth. Configure também a conta Stripe própria de Minhas Aves, com seus próprios Price IDs, chaves e webhook — não reutilize os do TubeX.
 
 O logo interno fica em `public/branding/apollo-logo.png`; o símbolo usado na marca pública e no favicon fica em `public/branding/minhas-aves-icon.png`.
 
@@ -31,7 +31,7 @@ Crie um projeto novo e execute:
 
 Depois, configure Authentication > URL Configuration:
 - Site URL: seu domínio
-- Redirect URL: `https://www.minhasaves.com.br/auth/confirm`
+- Redirect URL: `https://minhasaves.com.br/auth/confirm` e `https://www.minhasaves.com.br/auth/confirm`
 - local: `http://localhost:3000/auth/confirm`
 
 ## 3. Stripe
