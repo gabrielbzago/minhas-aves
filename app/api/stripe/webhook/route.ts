@@ -63,9 +63,12 @@ async function applySubscriptionState(
   if (profile.stripe_subscription_id && profile.stripe_subscription_id !== sub.id) return;
 
   const entitled = isEntitledStatus(sub.status);
-  const plan = entitled && ["amador", "profissional", "lenda"].includes(sub.metadata?.plan || "")
-    ? sub.metadata!.plan!
-    : "free";
+  const priceId = sub.items.data[0]?.price?.id;
+  const configuredPlan = priceId === process.env.STRIPE_PRICE_AMADOR ? "amador"
+    : priceId === process.env.STRIPE_PRICE_PROFISSIONAL ? "profissional"
+    : priceId === process.env.STRIPE_PRICE_LENDA ? "lenda" : null;
+  const metadataPlan = ["amador", "profissional", "lenda"].includes(sub.metadata?.plan || "") ? sub.metadata!.plan! : null;
+  const plan = (entitled || sub.status === "past_due") ? (configuredPlan || metadataPlan || "free") : "free";
   const periodStart = unixDate(subscriptionPeriodStart(sub));
   const periodEnd = unixDate(subscriptionPeriodEnd(sub));
   const periodChanged = profile.current_period_start !== periodStart;
@@ -83,7 +86,30 @@ async function applySubscriptionState(
   }).eq("id", profile.id);
   if (error) throw error;
 
-  if (sub.metadata?.plan === "lenda") {
+  const priceId = sub.items.data[0]?.price?.id || null;
+  const historyPlan = plan !== "free" ? plan : (configuredPlan || metadataPlan);
+  if (configuredPlan && sub.metadata?.plan !== configuredPlan) {
+    await getStripe().subscriptions.update(sub.id, { metadata: { ...sub.metadata, plan: configuredPlan, user_id: profile.id } });
+  }
+  if (historyPlan && historyPlan !== "free") {
+    const { error: historyError } = await admin.from("stripe_subscriptions").upsert({
+      stripe_subscription_id: sub.id,
+      user_id: profile.id,
+      stripe_customer_id: typeof sub.customer === "string" ? sub.customer : null,
+      stripe_price_id: priceId,
+      plan: historyPlan,
+      status: sub.status,
+      current_period_start: periodStart,
+      current_period_end: periodEnd,
+      cancel_at_period_end: Boolean(sub.cancel_at_period_end),
+      canceled_at: unixDate(sub.canceled_at),
+      latest_event_type: eventType,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "stripe_subscription_id" });
+    if (historyError) throw historyError;
+  }
+
+  if (historyPlan === "lenda") {
     await admin.rpc("record_vet_subscription_history", {
       p_creator_id: profile.id,
       p_plan: "lenda",
@@ -221,6 +247,20 @@ export async function POST(request: Request) {
           current_period_end: unixDate(subscriptionPeriodEnd(subscription)),
         }).eq("id", profile.id);
         if (error) throw error;
+        const deletedPrice = subscription.items.data[0]?.price?.id || null;
+        const deletedPlan = subscription.metadata?.plan;
+        if (["amador", "profissional", "lenda"].includes(deletedPlan || "")) {
+          const { error: historyError } = await admin.from("stripe_subscriptions").upsert({
+            stripe_subscription_id: subscription.id, user_id: profile.id,
+            stripe_customer_id: typeof subscription.customer === "string" ? subscription.customer : null,
+            stripe_price_id: deletedPrice, plan: deletedPlan, status: "canceled",
+            current_period_start: unixDate(subscriptionPeriodStart(subscription)),
+            current_period_end: unixDate(subscriptionPeriodEnd(subscription)),
+            cancel_at_period_end: false, canceled_at: unixDate(subscription.canceled_at),
+            latest_event_type: event.type, updated_at: new Date().toISOString(),
+          }, { onConflict: "stripe_subscription_id" });
+          if (historyError) throw historyError;
+        }
 
         if (profile.plan === "lenda" || subscription.metadata?.plan === "lenda") {
           await admin.rpc("record_vet_subscription_history", {
@@ -248,7 +288,8 @@ export async function POST(request: Request) {
             ? (!profile.stripe_subscription_id || profile.stripe_subscription_id === subId)
             : !profile.stripe_subscription_id)) {
             const { error } = await admin.from("profiles").update({
-              plan: "free",
+              // Mantém o plano durante a janela de recuperação do Stripe.
+              // O bloqueio definitivo ocorre se a assinatura for cancelada/expirar.
               subscription_status: "past_due",
             }).eq("id", profile.id);
             if (error) throw error;
@@ -274,6 +315,44 @@ export async function POST(request: Request) {
         const subscription = await getStripe().subscriptions.retrieve(subId);
         if (!isEntitledStatus(subscription.status)) break;
         await applySubscriptionState(admin, subscription, event.type);
+        break;
+      }
+
+      case "charge.refunded": {
+        const charge = event.data.object as Stripe.Charge;
+        if (charge.amount_refunded < charge.amount) break; // reembolso parcial não encerra automaticamente a assinatura
+        const customerId = typeof charge.customer === "string" ? charge.customer : null;
+        if (!customerId) break;
+        const { data: profile } = await admin.from("profiles")
+          .select("id,plan,stripe_subscription_id")
+          .eq("stripe_customer_id", customerId).maybeSingle();
+        if (!profile) break;
+        const { error } = await admin.from("profiles").update({
+          plan: "free", subscription_status: "refunded",
+        }).eq("id", profile.id);
+        if (error) throw error;
+        break;
+      }
+
+      case "charge.dispute.closed": {
+        const dispute = event.data.object as Stripe.Dispute;
+        const chargeId = typeof dispute.charge === "string" ? dispute.charge : null;
+        if (!chargeId) break;
+        const charge = await getStripe().charges.retrieve(chargeId);
+        const customerId = typeof charge.customer === "string" ? charge.customer : null;
+        if (!customerId) break;
+        const { data: profile } = await admin.from("profiles")
+          .select("id,stripe_subscription_id").eq("stripe_customer_id", customerId).maybeSingle();
+        if (!profile) break;
+        if (dispute.status === "won" && profile.stripe_subscription_id) {
+          const subscription = await getStripe().subscriptions.retrieve(profile.stripe_subscription_id);
+          await applySubscriptionState(admin, subscription, event.type);
+        } else if (dispute.status === "lost") {
+          const { error } = await admin.from("profiles").update({
+            plan: "free", subscription_status: "chargeback",
+          }).eq("id", profile.id);
+          if (error) throw error;
+        }
         break;
       }
 
