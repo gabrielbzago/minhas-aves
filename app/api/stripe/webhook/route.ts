@@ -63,7 +63,7 @@ async function applySubscriptionState(
   if (profile.stripe_subscription_id && profile.stripe_subscription_id !== sub.id) return;
 
   const entitled = isEntitledStatus(sub.status);
-  const priceId = sub.items.data[0]?.price?.id;
+  const priceId = sub.items.data[0]?.price?.id || null;
   const configuredPlan = priceId === process.env.STRIPE_PRICE_AMADOR ? "amador"
     : priceId === process.env.STRIPE_PRICE_PROFISSIONAL ? "profissional"
     : priceId === process.env.STRIPE_PRICE_LENDA ? "lenda" : null;
@@ -86,7 +86,6 @@ async function applySubscriptionState(
   }).eq("id", profile.id);
   if (error) throw error;
 
-  const priceId = sub.items.data[0]?.price?.id || null;
   const historyPlan = plan !== "free" ? plan : (configuredPlan || metadataPlan);
   if (configuredPlan && sub.metadata?.plan !== configuredPlan) {
     await getStripe().subscriptions.update(sub.id, { metadata: { ...sub.metadata, plan: configuredPlan, user_id: profile.id } });
