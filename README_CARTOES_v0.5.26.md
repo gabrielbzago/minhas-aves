@@ -3,8 +3,8 @@
 - Seleção múltipla no Meu Plantel, com limite de 24 aves por impressão.
 - Selecionar todos marca no máximo 24 aves; o usuário pode desmarcar e escolher outras.
 - Impressão reorganizada: frente e verso de cada ave ficam lado a lado na mesma face da folha, com guia central de dobra.
-- Três cartões dobráveis por folha A4 em orientação paisagem.
-- Cada cartão aberto mede 180 × 60 mm; dobrado fica com aproximadamente 90 × 60 mm.
+- Até quatro cartões dobráveis por folha A4 em orientação paisagem.
+- Cada cartão aberto mede 140 × 100 mm; dobrado fica com 70 × 100 mm (7 × 10 cm).
 - A impressão mantém cores, identificação do criatório, dados da ave, genealogia e descendentes.
 - O endpoint valida autenticação, plano/teste e limite de 24 IDs.
 - A impressão individual continua disponível no cartão de cada ave.
