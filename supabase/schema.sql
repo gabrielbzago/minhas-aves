@@ -56,6 +56,7 @@ create table public.birds (
   father_id uuid references public.birds(id) on delete set null,
   mother_id uuid references public.birds(id) on delete set null,
   genetic_line text,
+  mutation_type text,
   genetics jsonb not null default '{}'::jsonb,
   breeder_matrix boolean not null default false,
   notes text,

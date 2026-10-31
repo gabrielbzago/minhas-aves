@@ -20,7 +20,7 @@ export default function BirdForm({ species, birds, initialBird }: { species: any
     : {
         name: "", species_id: "", sex: "indeterminado", birth_date: "", death_date: "", transfer_date: "",
         status: "ativo", ring_number: "", ibama_registration_number: "", ibama_record_type: "",
-        father_id: "", mother_id: "", genetic_line: "", genetics: "", breeder_matrix: false, notes: "",
+        father_id: "", mother_id: "", genetic_line: "", genetics: "", mutation_type: "", breeder_matrix: false, notes: "",
       });
 
   const set = (k: string, v: any) => setF((x: any) => ({ ...x, [k]: v }));
@@ -104,6 +104,7 @@ export default function BirdForm({ species, birds, initialBird }: { species: any
       mother_id: f.mother_id || null,
       genetic_line: f.genetic_line?.trim() || null,
       genetics: normalizeGenetics(f.genetics),
+      mutation_type: f.mutation_type || null,
       breeder_matrix: !!f.breeder_matrix,
       notes: f.notes?.trim() || null,
     };
@@ -147,6 +148,7 @@ export default function BirdForm({ species, birds, initialBird }: { species: any
       <div className="field"><label>Mãe</label><select value={f.mother_id || ""} onChange={e => set("mother_id", e.target.value)}><option value="">Não informado</option>{birds.filter(b => b.sex === "femea").map(b => <option key={b.id} value={b.id}>{b.name} — {b.ring_number || "sem anilha"}</option>)}</select></div>
       <div className="field"><label>Linhagem / genética</label><input value={f.genetic_line || ""} onChange={e => set("genetic_line", e.target.value)} placeholder="Ex.: linha X, mutação Y" /></div>
       <div className="field"><label>Genotipagem / genética detalhada</label><input value={f.genetics || ""} onChange={e => set("genetics", e.target.value)} placeholder="Ex.: mutação:opalino, portador:ino" /></div>
+      <div className="field full"><label><input type="checkbox" checked={!!f.mutation_type} onChange={e => set("mutation_type", e.target.checked ? (f.mutation_type || "Lutino") : "")} style={{ width: "auto", marginRight: 8 }} /> Mutação</label>{!!f.mutation_type && <div style={{marginTop:10,maxWidth:360}}><label htmlFor="bird-mutation-type">Tipo de mutação</label><select id="bird-mutation-type" value={f.mutation_type} onChange={e=>set("mutation_type",e.target.value)}><option value="Lutino">Lutino</option><option value="Branco">Branco</option><option value="Preto">Preto</option><option value="Canela">Canela</option><option value="Diluido">Diluido</option><option value="Laranjeira">Laranjeira</option><option value="Ardesiaca">Ardesiaca</option></select></div>}</div>
       <div className="field full"><label><input type="checkbox" checked={!!f.breeder_matrix} onChange={e => set("breeder_matrix", e.target.checked)} style={{ width: "auto", marginRight: 8 }} /> Marcar como matriz principal do criatório</label></div>
       <div className="field full"><label>Observações</label><textarea rows={5} value={f.notes || ""} onChange={e => set("notes", e.target.value)} placeholder="Informações adicionais, origem, características, histórico..." /></div>
     </div>

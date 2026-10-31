@@ -251,11 +251,11 @@ begin
   if exists(select 1 from public.birds where user_id=r.sender_id and coalesce(is_genealogy_reference,false)=false and (father_id=b.id or mother_id=b.id)) then
     insert into public.birds(
       user_id,species_id,name,sex,birth_date,death_date,transfer_date,status,ring_number,
-      ibama_registration_number,ibama_record_type,father_id,mother_id,genetic_line,genetics,
+      ibama_registration_number,ibama_record_type,father_id,mother_id,genetic_line,mutation_type,genetics,
       breeder_matrix,notes,is_genealogy_reference,source_bird_id,source_owner_id,transfer_origin_id
     ) values (
       r.sender_id,b.species_id,b.name,b.sex,b.birth_date,b.death_date,b.transfer_date,b.status,b.ring_number,
-      b.ibama_registration_number,b.ibama_record_type,b.father_id,b.mother_id,b.genetic_line,b.genetics,
+      b.ibama_registration_number,b.ibama_record_type,b.father_id,b.mother_id,b.genetic_line,b.mutation_type,b.genetics,
       b.breeder_matrix,b.notes,true,b.id,r.sender_id,r.id
     ) returning id into v_sender_reference;
 
@@ -290,13 +290,13 @@ begin
 
   insert into public.birds(
     id,user_id,species_id,name,sex,birth_date,death_date,transfer_date,status,ring_number,
-    ibama_registration_number,ibama_record_type,father_id,mother_id,genetic_line,genetics,
+    ibama_registration_number,ibama_record_type,father_id,mother_id,genetic_line,mutation_type,genetics,
     breeder_matrix,notes,is_genealogy_reference,source_bird_id,source_owner_id,transfer_origin_id
   )
   select
     m.new_id,r.recipient_id,src.species_id,src.name,src.sex,src.birth_date,src.death_date,null,src.status,src.ring_number,
     src.ibama_registration_number,src.ibama_record_type,
-    fm.new_id,mm.new_id,src.genetic_line,src.genetics,src.breeder_matrix,src.notes,
+    fm.new_id,mm.new_id,src.genetic_line,src.mutation_type,src.genetics,src.breeder_matrix,src.notes,
     true,src.id,r.sender_id,r.id
   from public.birds src
   join transfer_map m on m.old_id=src.id
