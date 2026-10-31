@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function BirdForm({ species, birds, initialBird }: { species: any[]; birds: any[]; initialBird?: any }) {
@@ -7,6 +7,8 @@ export default function BirdForm({ species, birds, initialBird }: { species: any
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [ringChecking, setRingChecking] = useState(false);
+  const [stockRings, setStockRings] = useState<any[]>([]);
+  const [stockRingId, setStockRingId] = useState("");
   const [f, setF] = useState<any>(initialBird
     ? {
         ...initialBird,
@@ -22,6 +24,8 @@ export default function BirdForm({ species, birds, initialBird }: { species: any
       });
 
   const set = (k: string, v: any) => setF((x: any) => ({ ...x, [k]: v }));
+
+  useEffect(() => { if (!initialBird) fetch("/api/rings?status=disponivel").then(r=>r.ok?r.json():{data:[]}).then(x=>setStockRings(x.data||[])).catch(()=>setStockRings([])); }, [initialBird]);
 
   async function checkRingAvailability(value: string) {
     const ring = String(value || "").trim();
@@ -79,7 +83,7 @@ export default function BirdForm({ species, birds, initialBird }: { species: any
     }
 
     setLoading(true);
-    if (f.ring_number?.trim()) {
+    if (f.ring_number?.trim() && !stockRingId) {
       const ringOk = await checkRingAvailability(f.ring_number);
       if (!ringOk) { setLoading(false); return; }
     }
@@ -92,7 +96,8 @@ export default function BirdForm({ species, birds, initialBird }: { species: any
       birth_date: f.birth_date || null,
       death_date: f.death_date || null,
       transfer_date: f.transfer_date || null,
-      ring_number: f.ring_number?.trim() || null,
+      ring_number: stockRingId ? null : (f.ring_number?.trim() || null),
+      ring_inventory_id: stockRingId || null,
       ibama_registration_number: f.ibama_registration_number?.trim() || null,
       ibama_record_type: f.ibama_record_type?.trim() || null,
       father_id: f.father_id || null,
@@ -129,13 +134,13 @@ export default function BirdForm({ species, birds, initialBird }: { species: any
     {error && <div className="error" role="alert">{error}</div>}
     <div className="form-grid">
       <div className="field"><label>Nome da ave *</label><input required value={f.name} onChange={e => set("name", e.target.value)} placeholder="Ex.: Thor" /></div>
-      <div className="field"><label>Espécie *</label><select required value={f.species_id} onChange={e => set("species_id", e.target.value)}><option value="">Selecione...</option>{species.map(s => <option key={s.id} value={s.id}>{s.common_name} — {s.scientific_name}</option>)}</select></div>
+      <div className="field"><label>Espécie *</label><select required value={f.species_id} onChange={e => { set("species_id", e.target.value); setStockRingId(""); }}><option value="">Selecione...</option>{species.map(s => <option key={s.id} value={s.id}>{s.common_name} — {s.scientific_name}</option>)}</select></div>
       <div className="field"><label>Sexagem / sexo *</label><select required value={f.sex} onChange={e => set("sex", e.target.value)}><option value="macho">Macho</option><option value="femea">Fêmea</option><option value="indeterminado">Indeterminado</option></select></div>
       <div className="field"><label>Status</label><select value={f.status} onChange={e => set("status", e.target.value)}><option value="ativo">Ativo</option><option value="falecido">Falecido</option><option value="transferido">Transferido</option><option value="arquivado">Arquivado</option></select></div>
       <div className="field"><label>Data de nascimento</label><input type="date" value={f.birth_date || ""} onChange={e => set("birth_date", e.target.value)} /></div>
       <div className="field"><label>Data de falecimento</label><input type="date" value={f.death_date || ""} onChange={e => set("death_date", e.target.value)} /></div>
       <div className="field"><label>Data de transferência</label><input type="date" value={f.transfer_date || ""} onChange={e => set("transfer_date", e.target.value)} /></div>
-      <div className="field"><label>Número da anilha</label><input value={f.ring_number || ""} onChange={e => set("ring_number", e.target.value)} onBlur={e => { if (e.target.value.trim()) void checkRingAvailability(e.target.value); }} placeholder="Número / identificação" /><small style={{color:"var(--muted)"}}>A anilha é única no sistema e não pode ser reutilizada.</small></div>
+      <div className="field"><label>Aplicar anilha do estoque (opcional)</label><select value={stockRingId} onChange={e=>{setStockRingId(e.target.value);if(e.target.value)set("ring_number","");}}><option value="">Não selecionar agora</option>{stockRings.filter(r=>!f.species_id||r.species_id===f.species_id).map(r=><option key={r.id} value={r.id}>{r.ring_number} · {r.species?.common_name||"Espécie"}</option>)}</select><small style={{color:"var(--muted)"}}>Ao salvar o filhote, a anilha será baixada automaticamente do estoque.</small></div><div className="field"><label>Número da anilha (manual)</label><input value={f.ring_number || ""} onChange={e => { setStockRingId(""); set("ring_number", e.target.value); }} onBlur={e => { if (e.target.value.trim()) void checkRingAvailability(e.target.value); }} placeholder="Número / identificação" /><small style={{color:"var(--muted)"}}>A anilha é única no sistema e não pode ser reutilizada.</small></div>
       <div className="field"><label>Registro regulatório (informado pelo criador)</label><input value={f.ibama_registration_number || ""} onChange={e => set("ibama_registration_number", e.target.value)} placeholder="Preencha conforme seu documento" /></div>
       <div className="field"><label>Tipo do registro</label><input value={f.ibama_record_type || ""} onChange={e => set("ibama_record_type", e.target.value)} placeholder="Ex.: registro, licença, origem" /></div>
       <div className="field"><label>Pai</label><select value={f.father_id || ""} onChange={e => set("father_id", e.target.value)}><option value="">Não informado</option>{birds.filter(b => b.sex === "macho").map(b => <option key={b.id} value={b.id}>{b.name} — {b.ring_number || "sem anilha"}</option>)}</select></div>

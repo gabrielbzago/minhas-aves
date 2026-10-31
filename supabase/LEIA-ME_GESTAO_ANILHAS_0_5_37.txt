@@ -1,0 +1,13 @@
+GESTÃO DE ANILHAS — APOLLO 0.5.37
+
+Antes de publicar esta versão:
+1. Abra o projeto no Supabase.
+2. Entre em SQL Editor > New query.
+3. Abra e execute o arquivo migration_gestao_anilhas_0_5_37.sql.
+4. Confirme que a tabela public.ring_inventory e as funções apply_ring_to_bird e update_ring_sex foram criadas.
+5. Publique a aplicação Next.js.
+
+O cadastro é individual: cada número corresponde a uma anilha e é único por criador.
+A quantidade em estoque é calculada automaticamente pelo número de registros com status "disponivel".
+Ao cadastrar um filhote, é possível selecionar uma anilha disponível no próprio formulário. A aplicação atualiza o número da ave, vincula pai/mãe registrados na anilha quando a ficha ainda não tiver esses pais, e baixa a unidade do estoque numa transação SQL.
+O sexo da anilha começa como "indeterminado". Pode ser informado na aplicação ou alterado posteriormente na listagem; quando aplicada, a alteração também atualiza o sexo da ave.

@@ -37,10 +37,10 @@ const SPECIAL: Record<string,{title:string;description:string}> = {
   "modulo-veterinario": {title:"Módulo Veterinário Completo",description:"Centralize consultas, prontuários, receitas e documentos veterinários vinculados às aves. O Módulo Veterinário é liberado nos planos Profissional e Lenda."},
 };
 
-export default function ModuleManager({module,birds,initialRecords,canImport,vet,species}:any){
- if(module==="gestao-anilhas") return <RingInventoryManager birds={birds||[]} species={species||[]}/>;
+export default function ModuleManager({module,birds,initialRecords,canImport,vet,species=[]}:any){
  const router=useRouter(); const [cardColor,setCardColor]=useState<CardColorKey>(DEFAULT_CARD_COLOR); const [records,setRecords]=useState<any[]>(initialRecords||[]); const [birdId,setBirdId]=useState(""); const [title,setTitle]=useState(""); const [data,setData]=useState<Record<string,string>>({}); const [busy,setBusy]=useState(false); const [error,setError]=useState(""); const [file,setFile]=useState<File|null>(null);
  const fields=FIELD_MAP[module]||[{label:"Título",key:"title"},{label:"Observações",key:"notes",type:"textarea"}];
+ if(module==="gestao-anilhas") return <RingInventoryManager birds={birds||[]} species={species||[]}/>;
  const set=(k:string,v:string)=>setData(x=>({...x,[k]:v}));
  async function save(e:any){
   e.preventDefault(); setBusy(true); setError(""); const c=createClient();

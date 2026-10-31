@@ -55,7 +55,8 @@ export async function POST(request: Request) {
   const { supabase, user } = await requireUser();
   const body = await request.json();
   const isBulk = Array.isArray(body);
-  const rows = (isBulk ? body : [body]).map((item: any) => cleanBirdPayload(item, user.id));
+  const ringInventoryId = !isBulk ? String(body?.ring_inventory_id || "") : "";
+  const rows = (isBulk ? body : [body]).map((item: any) => { const copy={...(item||{})}; delete copy.ring_inventory_id; return cleanBirdPayload(copy, user.id); });
 
   // O downgrade nunca apaga aves. No plano grátis, apenas impede novos cadastros
   // acima do limite; os registros já existentes continuam preservados.
@@ -108,6 +109,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ data: null, error: friendlySupabaseError(result.error) }, { status: 400 });
   }
 
+  if (ringInventoryId && !isBulk) {
+    const createdBird = result.data?.[0];
+    const { error: applyError } = await supabase.rpc("apply_ring_to_bird", {
+      p_ring_id: ringInventoryId,
+      p_bird_id: createdBird.id,
+      p_sex: createdBird.sex || "indeterminado",
+    });
+    if (applyError) {
+      await supabase.from("birds").delete().eq("id",createdBird.id).eq("user_id",user.id);
+      return NextResponse.json({data:null,error:friendlySupabaseError(applyError,"A ave não foi cadastrada porque não foi possível aplicar a anilha selecionada. Confira o estoque e tente novamente.")},{status:400});
+    }
+    const {data:updatedBird}=await supabase.from("birds").select("*").eq("id",createdBird.id).single();
+    return NextResponse.json({data:updatedBird,error:null},{status:201});
+  }
   return NextResponse.json({ data: isBulk ? result.data : result.data?.[0], error: null }, { status: 201 });
 }
 

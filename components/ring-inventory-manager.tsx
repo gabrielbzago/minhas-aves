@@ -1,40 +1,94 @@
 "use client";
-
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { friendlySupabaseError } from "@/lib/error-messages";
 
- type Ring = {id:string;ring_number:string;species_id:string|null;father_id:string|null;mother_id:string|null;notes:string|null;status:"available"|"applied";sex:"indeterminado"|"macho"|"femea";bird_id:string|null;created_at:string;applied_at:string|null};
-
-export default function RingInventoryManager({birds,species}:any){
- const [rings,setRings]=useState<Ring[]>([]); const [loading,setLoading]=useState(true); const [busy,setBusy]=useState(false); const [error,setError]=useState(""); const [notice,setNotice]=useState("");
- const [number,setNumber]=useState(""); const [speciesId,setSpeciesId]=useState(""); const [fatherId,setFatherId]=useState(""); const [motherId,setMotherId]=useState(""); const [notes,setNotes]=useState("");
- const [selectedRing,setSelectedRing]=useState(""); const [birdMode,setBirdMode]=useState("new"); const [birdId,setBirdId]=useState(""); const [birdName,setBirdName]=useState(""); const [birthDate,setBirthDate]=useState(""); const [sex,setSex]=useState("indeterminado");
- const client=useMemo(()=>createClient(),[]);
- async function refresh(){setLoading(true);const {data,error}=await client.from("bird_ring_inventory").select("*").order("created_at",{ascending:false});if(error)setError(friendlySupabaseError(error,"Não foi possível carregar o estoque de anilhas."));else setRings((data||[]) as Ring[]);setLoading(false);}
- useEffect(()=>{refresh();},[]);
- async function addRing(e:any){e.preventDefault();setBusy(true);setError("");setNotice("");const {error}=await client.from("bird_ring_inventory").insert({ring_number:number.trim(),species_id:speciesId||null,father_id:fatherId||null,mother_id:motherId||null,notes:notes.trim()||null});if(error)setError(friendlySupabaseError(error,"Não foi possível cadastrar. Verifique se esse número já existe no estoque ou no plantel."));else{setNotice("Anilha cadastrada e disponível no estoque.");setNumber("");setSpeciesId("");setFatherId("");setMotherId("");setNotes("");await refresh();}setBusy(false);}
- async function applyRing(e:any){e.preventDefault();if(!selectedRing){setError("Selecione uma anilha disponível.");return;}if(birdMode==="new"&&!birdName.trim()){setError("Informe o nome ou identificação do filhote.");return;}if(birdMode==="existing"&&!birdId){setError("Selecione a ave que receberá a anilha.");return;}setBusy(true);setError("");setNotice("");const {data,error}=await client.rpc("apply_bird_ring",{p_ring_id:selectedRing,p_bird_id:birdMode==="existing"?birdId:null,p_name:birdMode==="new"?birdName.trim():null,p_birth_date:birthDate||null,p_sex:sex});if(error)setError(friendlySupabaseError(error,"Não foi possível aplicar a anilha. Confira se a ave e a anilha pertencem ao seu criatório e se ela ainda está disponível."));else{setNotice(`Anilha aplicada com sucesso${data?.ring_number?`: ${data.ring_number}`:""}. O estoque foi atualizado.`);setSelectedRing("");setBirdId("");setBirdName("");setBirthDate("");setSex("indeterminado");await refresh();}setBusy(false);}
- async function changeSex(ring:Ring,next:string){setBusy(true);setError("");const {error}=await client.rpc("set_bird_ring_sex",{p_ring_id:ring.id,p_sex:next});if(error)setError(friendlySupabaseError(error,"Não foi possível atualizar o sexo."));else await refresh();setBusy(false);}
- async function deleteRing(r:Ring){if(!confirm(`Excluir a anilha ${r.ring_number} do estoque?`))return;setBusy(true);const {error}=await client.from("bird_ring_inventory").delete().eq("id",r.id).eq("status","available");if(error)setError(friendlySupabaseError(error,"Não foi possível excluir esta anilha."));else await refresh();setBusy(false);}
- const available=rings.filter(r=>r.status==="available");const applied=rings.filter(r=>r.status==="applied");const labelBird=(id:string|null)=>birds.find((b:any)=>b.id===id)?.name||"Não informado";
- return <div className="module-manager">
-  {error&&<div className="error" role="alert">{error}</div>}{notice&&<div className="member-note" role="status"><strong>✓ {notice}</strong></div>}
-  <div className="stat-grid"><div className="stat"><small>Anilhas cadastradas</small><strong>{rings.length}</strong></div><div className="stat"><small>Disponíveis</small><strong>{available.length}</strong></div><div className="stat"><small>Aplicadas</small><strong>{applied.length}</strong></div><div className="stat"><small>Sexo indefinido</small><strong>{rings.filter(r=>r.sex==="indeterminado").length}</strong></div></div>
-  <form className="form-card" onSubmit={addRing}><h3>＋ Entrada de anilha no estoque</h3><p>Cadastre cada número individualmente. O sistema impede duplicidade com outras anilhas do estoque e com as aves já cadastradas.</p><div className="form-grid">
-   <div className="field"><label>Número exclusivo da anilha *</label><input required value={number} onChange={e=>setNumber(e.target.value)} placeholder="Ex.: BR 2026 001234"/></div>
-   <div className="field"><label>Espécie *</label><select required value={speciesId} onChange={e=>setSpeciesId(e.target.value)}><option value="">Selecione a espécie</option>{species.map((s:any)=><option key={s.id} value={s.id}>{s.common_name} · {s.scientific_name}</option>)}</select></div>
-   <div className="field"><label>Pai da linhagem</label><select value={fatherId} onChange={e=>setFatherId(e.target.value)}><option value="">Não informado</option>{birds.filter((b:any)=>b.sex!=="femea").map((b:any)=><option key={b.id} value={b.id}>{b.name} · {b.ring_number||"sem anilha"}</option>)}</select></div>
-   <div className="field"><label>Mãe da linhagem</label><select value={motherId} onChange={e=>setMotherId(e.target.value)}><option value="">Não informada</option>{birds.filter((b:any)=>b.sex!=="macho").map((b:any)=><option key={b.id} value={b.id}>{b.name} · {b.ring_number||"sem anilha"}</option>)}</select></div>
-   <div className="field full"><label>Observações</label><textarea rows={3} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Informações do lote, fornecedor, ano, cor ou outras observações..."/></div>
-  </div><div className="form-actions"><button className="btn btn-primary" disabled={busy}>{busy?"Salvando...":"Cadastrar anilha no estoque"}</button></div></form>
-  <form className="form-card" onSubmit={applyRing}><h3>Aplicar anilha em filhote</h3><p>Escolha uma anilha disponível e vincule ao filhote. Você pode criar o cadastro do filhote nesta etapa ou selecionar uma ave já cadastrada. O sexo começa como indefinido.</p>
-   <div className="form-grid"><div className="field full"><label>Anilha disponível *</label><select required value={selectedRing} onChange={e=>{setSelectedRing(e.target.value);const r=available.find(x=>x.id===e.target.value);}}><option value="">Selecione o número</option>{available.map(r=><option key={r.id} value={r.id}>{r.ring_number} · {species.find((s:any)=>s.id===r.species_id)?.common_name||"Espécie não informada"}</option>)}</select></div>
-    <div className="field full"><label>Destino da aplicação</label><select value={birdMode} onChange={e=>setBirdMode(e.target.value)}><option value="new">Cadastrar um novo filhote</option><option value="existing">Vincular a uma ave existente</option></select></div>
-    {birdMode==="new"?<><div className="field"><label>Nome / identificação do filhote *</label><input required value={birdName} onChange={e=>setBirdName(e.target.value)} placeholder="Ex.: Filhote 01 - Ninhada de outubro"/></div><div className="field"><label>Data de nascimento</label><input type="date" value={birthDate} onChange={e=>setBirthDate(e.target.value)}/></div></>:<div className="field full"><label>Ave do plantel *</label><select required value={birdId} onChange={e=>setBirdId(e.target.value)}><option value="">Selecione a ave</option>{birds.filter((b:any)=>!b.ring_number).map((b:any)=><option key={b.id} value={b.id}>{b.name} · {b.species?.common_name||"Espécie não informada"}</option>)}</select></div>}
-    <div className="field"><label>Sexo</label><select value={sex} onChange={e=>setSex(e.target.value)}><option value="indeterminado">Indefinido (a definir)</option><option value="macho">Macho</option><option value="femea">Fêmea</option></select></div>
-   </div><div className="form-actions"><button className="btn btn-primary" disabled={busy||!available.length}>{busy?"Aplicando...":"Aplicar anilha e dar baixa no estoque"}</button></div>
-  </form>
-  <section className="card"><h3>Estoque de anilhas</h3>{loading?<p>Carregando estoque...</p>:!rings.length?<div className="empty">Nenhuma anilha cadastrada. Comece adicionando a primeira acima.</div>:<div className="record-list">{rings.map(r=><article className="record" key={r.id}><div><strong>{r.ring_number}</strong><small>{species.find((s:any)=>s.id===r.species_id)?.common_name||"Espécie não informada"} · {r.status==="available"?"Disponível no estoque":"Aplicada"}</small><p>Pai: {labelBird(r.father_id)} · Mãe: {labelBird(r.mother_id)}{r.bird_id?` · Filhote: ${labelBird(r.bird_id)}`:""}{r.notes?` · ${r.notes}`:""}</p><div className="field" style={{maxWidth:260}}><label>Sexo {r.status==="available"?"(definir quando souber)":"(pode atualizar depois)"}</label><select value={r.sex} disabled={busy} onChange={e=>changeSex(r,e.target.value)}><option value="indeterminado">Indefinido</option><option value="macho">Macho</option><option value="femea">Fêmea</option></select></div></div><div className="record-actions">{r.status==="available"?<><span className="badge">Em estoque</span><button className="btn btn-danger" disabled={busy} onClick={()=>deleteRing(r)}>Excluir</button></>:<span className="badge">Baixa realizada</span>}</div></article>)}</div>}</section>
- </div>;
+const empty = { ring_number:"", species_id:"", father_id:"", mother_id:"", notes:"" };
+export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];species:any[]}) {
+  const [rows,setRows]=useState<any[]>([]);
+  const [form,setForm]=useState<any>(empty);
+  const [loading,setLoading]=useState(true);
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState("");
+  const [filter,setFilter]=useState("todos");
+  const [applyRing,setApplyRing]=useState("");
+  const [applyBird,setApplyBird]=useState("");
+  const [applySex,setApplySex]=useState("indeterminado");
+  const [query,setQuery]=useState("");
+  const client=createClient();
+  async function load(){
+    setLoading(true);setError("");
+    const {data,error}=await client.from("ring_inventory").select("*,species:species_id(common_name,scientific_name),father:father_id(name,ring_number),mother:mother_id(name,ring_number),applied_bird:applied_to_bird_id(name,ring_number)").order("created_at",{ascending:false});
+    if(error)setError(friendlySupabaseError(error,"Não foi possível carregar o estoque. Confira se aplicou a migração SQL no Supabase."));
+    else setRows(data||[]);
+    setLoading(false);
+  }
+  useEffect(()=>{void load();},[]);
+  const available=rows.filter(r=>r.status==="disponivel");
+  const applied=rows.filter(r=>r.status==="aplicada");
+  const filtered=useMemo(()=>rows.filter(r=>(filter==="todos"||r.status===filter)&&(`${r.ring_number} ${r.species?.common_name||""} ${r.notes||""}`).toLowerCase().includes(query.toLowerCase())),[rows,filter,query]);
+  const set=(k:string,v:string)=>setForm((x:any)=>({...x,[k]:v}));
+  async function add(e:any){
+    e.preventDefault();setBusy(true);setError("");
+    const {data:auth}=await client.auth.getUser();
+    if(!auth.user){setError("Faça login novamente.");setBusy(false);return;}
+    const {data,error}=await client.from("ring_inventory").insert({...form,ring_number:form.ring_number.trim(),species_id:form.species_id||null,father_id:form.father_id||null,mother_id:form.mother_id||null,user_id:auth.user.id,sex:"indeterminado",status:"disponivel"}).select("*,species:species_id(common_name,scientific_name),father:father_id(name),mother:mother_id(name)").single();
+    if(error)setError(friendlySupabaseError(error,"Não foi possível cadastrar a anilha. Verifique se o número já existe."));
+    else {setRows([data,...rows]);setForm(empty);}
+    setBusy(false);
+  }
+  async function apply(e:any){
+    e.preventDefault();setBusy(true);setError("");
+    const {data,error}=await client.rpc("apply_ring_to_bird",{p_ring_id:applyRing,p_bird_id:applyBird,p_sex:applySex});
+    if(error)setError(friendlySupabaseError(error,"Não foi possível aplicar a anilha ao filhote."));
+    else {setRows(rows.map(r=>r.id===applyRing?{...r,...data, status:"aplicada",applied_to_bird_id:applyBird,sex:applySex,applied_bird:birds.find(b=>b.id===applyBird)}:r));setApplyRing("");setApplyBird("");setApplySex("indeterminado");await load();}
+    setBusy(false);
+  }
+  async function changeSex(id:string,sex:string){
+    setBusy(true);setError("");
+    const {data,error}=await client.rpc("update_ring_sex",{p_ring_id:id,p_sex:sex});
+    if(error)setError(friendlySupabaseError(error,"Não foi possível atualizar o sexo."));
+    else setRows(rows.map(r=>r.id===id?{...r,...data,sex}:r));
+    setBusy(false);
+  }
+  async function remove(id:string){
+    if(!confirm("Excluir esta anilha do estoque? Somente anilhas ainda disponíveis podem ser excluídas."))return;
+    const {error}=await client.from("ring_inventory").delete().eq("id",id).eq("status","disponivel");
+    if(error)setError(friendlySupabaseError(error,"Não foi possível excluir a anilha."));
+    else setRows(rows.filter(r=>r.id!==id));
+  }
+  return <div className="module-manager">
+    <div className="stat-grid">
+      <div className="stat"><small>Total de anilhas</small><strong>{rows.length}</strong></div>
+      <div className="stat"><small>Disponíveis</small><strong>{available.length}</strong></div>
+      <div className="stat"><small>Aplicadas</small><strong>{applied.length}</strong></div>
+      <div className="stat"><small>Sexo indefinido</small><strong>{rows.filter(r=>r.sex==="indeterminado").length}</strong></div>
+    </div>
+    {error&&<div className="error" role="alert">{error}</div>}
+    <div className="form-card" style={{marginTop:16}}>
+      <h3>Cadastrar anilha no estoque</h3>
+      <p>Cadastre cada anilha individualmente. O número é exclusivo e o sexo começa como indefinido.</p>
+      <form onSubmit={add}><div className="form-grid">
+        <div className="field"><label>Número da anilha *</label><input required value={form.ring_number} onChange={e=>set("ring_number",e.target.value)} placeholder="Ex.: 001234"/></div>
+        <div className="field"><label>Espécie *</label><select required value={form.species_id} onChange={e=>set("species_id",e.target.value)}><option value="">Selecione a espécie</option>{species.map((s:any)=><option key={s.id} value={s.id}>{s.common_name} · {s.scientific_name}</option>)}</select></div>
+        <div className="field"><label>Pai da linhagem (opcional)</label><select value={form.father_id} onChange={e=>set("father_id",e.target.value)}><option value="">Não informado</option>{birds.filter((b:any)=>b.sex==="macho").map((b:any)=><option key={b.id} value={b.id}>{b.name} · {b.ring_number||"sem anilha"}</option>)}</select></div>
+        <div className="field"><label>Mãe da linhagem (opcional)</label><select value={form.mother_id} onChange={e=>set("mother_id",e.target.value)}><option value="">Não informado</option>{birds.filter((b:any)=>b.sex==="femea").map((b:any)=><option key={b.id} value={b.id}>{b.name} · {b.ring_number||"sem anilha"}</option>)}</select></div>
+        <div className="field full"><label>Observações</label><textarea rows={3} value={form.notes} onChange={e=>set("notes",e.target.value)} placeholder="Fornecedor, lote, cor, tamanho, observações..."/></div>
+      </div><div className="form-actions"><button className="btn btn-primary" disabled={busy}>{busy?"Salvando...":"Cadastrar anilha"}</button></div></form>
+    </div>
+    <div className="form-card" style={{marginTop:16}}>
+      <h3>Aplicar anilha em filhote</h3>
+      <p>Selecione uma anilha disponível e a ave recém-cadastrada no plantel. A baixa acontece automaticamente e o número fica vinculado ao filhote.</p>
+      <form onSubmit={apply}><div className="form-grid">
+        <div className="field"><label>Anilha disponível *</label><select required value={applyRing} onChange={e=>setApplyRing(e.target.value)}><option value="">Selecione</option>{available.map(r=><option key={r.id} value={r.id}>{r.ring_number} · {r.species?.common_name||"Espécie não informada"}</option>)}</select></div>
+        <div className="field"><label>Filhote do plantel *</label><select required value={applyBird} onChange={e=>setApplyBird(e.target.value)}><option value="">Selecione</option>{birds.filter((b:any)=>!b.ring_number).map((b:any)=><option key={b.id} value={b.id}>{b.name} · {b.species?.common_name||"espécie não informada"}</option>)}</select></div>
+        <div className="field"><label>Sexo (pode definir depois)</label><select value={applySex} onChange={e=>setApplySex(e.target.value)}><option value="indeterminado">Indefinido</option><option value="macho">Macho</option><option value="femea">Fêmea</option></select></div>
+      </div><div className="form-actions"><button className="btn btn-primary" disabled={busy||!available.length||!applyBird||!applyRing}>{busy?"Aplicando...":"Aplicar anilha e dar baixa"}</button></div></form>
+    </div>
+    <div className="form-card" style={{marginTop:16}}>
+      <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",flexWrap:"wrap"}}><h3>Estoque e histórico</h3><strong>{available.length} disponível(is)</strong></div>
+      <div className="form-grid"><div className="field"><label>Buscar</label><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Número, espécie ou observação"/></div><div className="field"><label>Exibir</label><select value={filter} onChange={e=>setFilter(e.target.value)}><option value="todos">Todas</option><option value="disponivel">Disponíveis</option><option value="aplicada">Aplicadas</option><option value="cancelada">Canceladas</option></select></div></div>
+      {loading?<div className="empty">Carregando estoque...</div>:filtered.length===0?<div className="empty">Nenhuma anilha encontrada.</div>:<div className="record-list">{filtered.map(r=><article className="record" key={r.id}><div style={{flex:1}}><strong>{r.ring_number}</strong><small>{r.species?.common_name||"Espécie não informada"} · {r.status==="disponivel"?"Disponível":r.status==="aplicada"?"Aplicada":"Cancelada"}{r.applied_bird?.name?` · ${r.applied_bird.name}`:""}</small><p>{r.father?.name?`Pai: ${r.father.name} `:""}{r.mother?.name?`Mãe: ${r.mother.name} `:""}{r.notes||""}</p><div className="field" style={{maxWidth:220}}><label>Sexo</label><select value={r.sex||"indeterminado"} disabled={busy} onChange={e=>changeSex(r.id,e.target.value)}><option value="indeterminado">Indefinido</option><option value="macho">Macho</option><option value="femea">Fêmea</option></select></div></div>{r.status==="disponivel"&&<button className="btn btn-danger" onClick={()=>remove(r.id)}>Excluir</button>}</article>)}</div>}
+    </div>
+  </div>;
 }
