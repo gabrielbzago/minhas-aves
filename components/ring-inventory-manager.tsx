@@ -15,6 +15,7 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
   const [applyBird,setApplyBird]=useState("");
   const [applySex,setApplySex]=useState("indeterminado");
   const [query,setQuery]=useState("");
+  const [sexDrafts,setSexDrafts]=useState<Record<string,string>>({});
   const client=createClient();
   async function load(){
     setLoading(true);setError("");
@@ -44,11 +45,16 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
     else {setRows(rows.map(r=>r.id===applyRing?{...r,...data, status:"aplicada",applied_to_bird_id:applyBird,sex:applySex,applied_bird:birds.find(b=>b.id===applyBird)}:r));setApplyRing("");setApplyBird("");setApplySex("indeterminado");await load();}
     setBusy(false);
   }
-  async function changeSex(id:string,sex:string){
+  async function saveSex(id:string){
+    const sex=sexDrafts[id];
+    if(!sex)return;
     setBusy(true);setError("");
     const {data,error}=await client.rpc("update_ring_sex",{p_ring_id:id,p_sex:sex});
-    if(error)setError(friendlySupabaseError(error,"Não foi possível atualizar o sexo."));
-    else setRows(rows.map(r=>r.id===id?{...r,...data,sex}:r));
+    if(error)setError(friendlySupabaseError(error,"Não foi possível salvar o sexo da anilha e do filhote."));
+    else {
+      setRows(current=>current.map(r=>r.id===id?{...r,...(data||{}),sex}:r));
+      setSexDrafts(current=>{const next={...current};delete next[id];return next;});
+    }
     setBusy(false);
   }
   async function remove(id:string){
@@ -88,7 +94,7 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
     <div className="form-card" style={{marginTop:16}}>
       <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",flexWrap:"wrap"}}><h3>Estoque e histórico</h3><strong>{available.length} disponível(is)</strong></div>
       <div className="form-grid"><div className="field"><label>Buscar</label><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Número, espécie ou observação"/></div><div className="field"><label>Exibir</label><select value={filter} onChange={e=>setFilter(e.target.value)}><option value="todos">Todas</option><option value="disponivel">Disponíveis</option><option value="aplicada">Aplicadas</option><option value="cancelada">Canceladas</option></select></div></div>
-      {loading?<div className="empty">Carregando estoque...</div>:filtered.length===0?<div className="empty">Nenhuma anilha encontrada.</div>:<div className="record-list">{filtered.map(r=><article className="record" key={r.id}><div style={{flex:1}}><strong>{r.ring_number}</strong><small>{r.species?.common_name||"Espécie não informada"} · {r.status==="disponivel"?"Disponível":r.status==="aplicada"?"Aplicada":"Cancelada"}{r.applied_bird?.name?` · ${r.applied_bird.name}`:""}</small><p>{r.father?.name?`Pai: ${r.father.name} `:""}{r.mother?.name?`Mãe: ${r.mother.name} `:""}{r.notes||""}</p><div className="field" style={{maxWidth:220}}><label>Sexo</label><select value={r.sex||"indeterminado"} disabled={busy} onChange={e=>changeSex(r.id,e.target.value)}><option value="indeterminado">Indefinido</option><option value="macho">Macho</option><option value="femea">Fêmea</option></select></div></div>{r.status==="disponivel"&&<button className="btn btn-danger" onClick={()=>remove(r.id)}>Excluir</button>}</article>)}</div>}
+      {loading?<div className="empty">Carregando estoque...</div>:filtered.length===0?<div className="empty">Nenhuma anilha encontrada.</div>:<div className="record-list">{filtered.map(r=><article className="record" key={r.id}><div style={{flex:1}}><strong>{r.ring_number}</strong><small>{r.species?.common_name||"Espécie não informada"} · {r.status==="disponivel"?"Disponível":r.status==="aplicada"?"Aplicada":"Cancelada"}{r.applied_bird?.name?` · ${r.applied_bird.name}`:""}</small><p>{r.father?.name?`Pai: ${r.father.name} `:""}{r.mother?.name?`Mãe: ${r.mother.name} `:""}{r.notes||""}</p><div style={{display:"flex",alignItems:"end",gap:8,flexWrap:"wrap",marginTop:10}}><div className="field" style={{maxWidth:220,flex:1}}><label>Sexo do filhote</label><select value={sexDrafts[r.id]??(r.sex||"indeterminado")} disabled={busy} onChange={e=>setSexDrafts(current=>({...current,[r.id]:e.target.value}))}><option value="indeterminado">Indefinido</option><option value="macho">Macho</option><option value="femea">Fêmea</option></select></div><button type="button" className="btn btn-primary" disabled={busy||!sexDrafts[r.id]||sexDrafts[r.id]===(r.sex||"indeterminado")} onClick={()=>saveSex(r.id)}>{busy?"Salvando...":"Salvar sexo"}</button></div></div>{r.status==="disponivel"&&<button className="btn btn-danger" onClick={()=>remove(r.id)}>Excluir</button>}</article>)}</div>}
     </div>
   </div>;
 }
