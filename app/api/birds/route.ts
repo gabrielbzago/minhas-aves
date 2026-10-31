@@ -134,7 +134,18 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ data: null, error: "Não foi possível identificar a ave que será alterada." }, { status: 400 });
   }
 
-  const payload = cleanBirdPayload(body, user.id);
+  // Campos exclusivos do formulário/fluxo de cadastro não pertencem à tabela birds.
+  // ring_inventory_id é usado somente no POST para aplicar uma anilha do estoque.
+  const updateInput = { ...body };
+  delete updateInput.ring_inventory_id;
+  delete updateInput.is_genealogy_reference;
+  delete updateInput.source_bird_id;
+  delete updateInput.source_owner_id;
+  delete updateInput.transfer_origin_id;
+
+  const payload = cleanBirdPayload(updateInput, user.id);
+  // Edição não pode transformar uma referência genealógica em ave real.
+  delete payload.is_genealogy_reference;
   if (payload.ring_number) {
     const { data: available, error: ringError } = await supabase.rpc("is_bird_ring_available", { p_ring: payload.ring_number, p_exclude: id });
     if (ringError) return NextResponse.json({ data: null, error: friendlySupabaseError(ringError, "Não foi possível verificar o número da anilha.") }, { status: 400 });
