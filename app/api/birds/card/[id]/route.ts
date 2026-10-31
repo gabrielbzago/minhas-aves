@@ -40,7 +40,7 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
  const {id}=await params; const {user}=await requireUser(); const db=createAdminClient();
  const preview=new URL(request.url).searchParams.get("preview")==="1";
  const themeParam=new URL(request.url).searchParams.get("theme"); const theme=isCardColorKey(themeParam)?themeParam:DEFAULT_CARD_COLOR; const accent=CARD_COLORS[theme].hex; const accentDark=hexMix(accent,-0.42); const accentBorder=hexMix(accent,0.58); const accentLight=hexMix(accent,0.88);
- let {data:profile,error:pe}=await db.from("profiles").select("plan,role,full_name,criatorio_name,criatorio_logo_path,amador_trial_eligible,amador_trial_started_at,amador_trial_ends_at").eq("id",user.id).maybeSingle();
+ let {data:profile,error:pe}=await db.from("profiles").select("plan,role,full_name,ctf_number,criatorio_name,criatorio_logo_path,amador_trial_eligible,amador_trial_started_at,amador_trial_ends_at").eq("id",user.id).maybeSingle();
  const trial=(!preview)?await ensureAmadorTrialOnFirstUse(db,user.id,"cartao-gaiola"):null;
  if(trial?.profile) profile=trial.profile;
  if(pe) return new Response(`Erro ao carregar perfil: ${pe.message}`,{status:500});
@@ -56,7 +56,7 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
  const species = Array.isArray((b as any).species) ? (b as any).species[0] : (b as any).species;
  const levels=await loadGenerations(db,b,user.id); const children=await descendants(db,b.id,user.id);
  let logoUrl=""; if(profile.criatorio_logo_path){const {data}=await db.storage.from("criatorio-brand").createSignedUrl(profile.criatorio_logo_path,3600);logoUrl=data?.signedUrl||"";}
- const brand=esc(profile.criatorio_name||"Minhas Aves"), responsible=esc(profile.full_name||"—"), ctf="";
+ const brand=esc(profile.criatorio_name||"Minhas Aves"), responsible=esc(profile.full_name||"—"), ctf=esc(profile.ctf_number||"");
  const logo=(alt:string)=>logoUrl?`<img class="logo" src="${esc(logoUrl)}" alt="${alt}">`:``;
  const ancestorName=(b:any)=>b?.name||"—";
  const ringLabel=(x:any)=>x?.ring_number||x?.reference_ring_number||"";
