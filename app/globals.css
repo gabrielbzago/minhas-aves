@@ -870,3 +870,37 @@ body{background:var(--bg);color:var(--text)}
   .ribbon-product-info strong{font-size:7px!important}
   .ribbon-seal-link{font-size:6.2px!important;padding:3px 3px!important}
 }
+
+/* Dashboard overview: compact, responsive and data-first */
+.stat{box-shadow:0 8px 24px rgba(24,48,74,.035);transition:transform .18s ease,box-shadow .18s ease}
+.stat:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(24,48,74,.07)}
+.stat-foot{display:block;margin-top:5px;color:var(--muted);font-size:11px}
+.dashboard-insights{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(260px,.85fr);gap:16px;margin:0 0 20px}
+.dashboard-sex-card,.dashboard-quick-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:24px;box-shadow:0 10px 32px rgba(24,48,74,.045);min-width:0}
+.dashboard-section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.dashboard-eyebrow{display:block;color:var(--primary-dark);font-size:10px;font-weight:850;letter-spacing:.13em;margin-bottom:7px}
+.dashboard-section-heading h2,.dashboard-quick-card h2{font-size:20px;letter-spacing:-.035em;margin:0;color:var(--text)}
+.dashboard-section-heading p,.dashboard-quick-card>p{font-size:12px;color:var(--muted);margin:5px 0 0;line-height:1.55}
+.dashboard-total-pill{white-space:nowrap;background:#f4f7f9;border:1px solid var(--line);border-radius:999px;padding:7px 11px;font-size:11px;font-weight:800;color:var(--text)}
+.sex-overview{display:flex;align-items:center;justify-content:center;gap:clamp(24px,5vw,64px);padding:22px 8px 18px}
+.sex-donut-wrap{width:176px;height:176px;flex:0 0 176px;display:grid;place-items:center}
+.sex-donut{width:100%;height:100%;border-radius:50%;display:grid;place-items:center;position:relative;filter:drop-shadow(0 7px 12px rgba(28,47,66,.10))}
+.sex-donut:before{content:"";position:absolute;inset:0;border-radius:50%;mask:radial-gradient(circle,transparent 0 57%,#000 58%)}
+.sex-donut-hole{width:68%;height:68%;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px #edf0f3}
+.sex-donut-hole strong{font-size:32px;line-height:1;letter-spacing:-.05em;color:var(--text)}
+.sex-donut-hole span{font-size:10px;color:var(--muted);margin-top:5px}
+.sex-legend{display:grid;gap:15px;min-width:170px;flex:1;max-width:270px}
+.sex-legend-item{display:grid;grid-template-columns:10px 1fr auto;align-items:center;gap:10px}
+.sex-legend-item>div{display:grid;gap:2px}.sex-legend-item strong{font-size:12px;color:var(--text)}.sex-legend-item small{font-size:10px;color:var(--muted)}.sex-legend-item>b{font-size:13px;color:var(--text)}
+.sex-dot{width:9px;height:9px;border-radius:50%}.sex-dot.female{background:#ec8eb5}.sex-dot.male{background:#6da8ee}.sex-dot.unknown{background:#d9e0e8}
+.sex-empty{font-size:11px;color:var(--muted);text-align:center;margin:0 0 12px}
+.sex-insight-footer{display:flex;align-items:center;gap:18px;border-top:1px solid #edf0f3;padding-top:13px;font-size:11px;color:var(--muted)}
+.sex-insight-footer b{color:var(--text)}.sex-insight-footer a{margin-left:auto;color:var(--primary-dark);font-weight:800;text-decoration:none}
+.dashboard-quick-card{background:linear-gradient(145deg,#fff 0%,#f5faf7 100%);display:flex;flex-direction:column;align-items:flex-start}
+.dashboard-quick-card h2{font-size:22px}.dashboard-quick-card>p{max-width:290px;margin-bottom:20px}
+.quick-metric{display:flex;align-items:center;gap:11px;margin-top:auto}.quick-metric-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:13px;background:#eaf5ef;font-size:18px}.quick-metric>div{display:grid;gap:2px}.quick-metric strong{font-size:19px;color:var(--text)}.quick-metric small{font-size:10px;color:var(--muted)}
+.quick-progress{height:7px;width:100%;background:#e8efeb;border-radius:99px;overflow:hidden;margin:12px 0 18px}.quick-progress span{display:block;height:100%;background:linear-gradient(90deg,#63b88b,#23865b);border-radius:99px;transition:width .3s ease}
+.dashboard-quick-card .btn{margin-top:0}
+@media(max-width:900px){.dashboard-insights{grid-template-columns:1fr 1fr}.sex-overview{gap:18px}.sex-donut-wrap{width:145px;height:145px;flex-basis:145px}}
+@media(max-width:700px){.dashboard-insights{grid-template-columns:1fr;gap:12px}.dashboard-sex-card,.dashboard-quick-card{padding:18px;border-radius:18px}.sex-overview{justify-content:space-around;gap:12px;padding:20px 0 16px}.sex-donut-wrap{width:132px;height:132px;flex-basis:132px}.sex-donut-hole strong{font-size:27px}.sex-legend{min-width:0;gap:12px}.sex-legend-item{gap:7px}.sex-insight-footer{gap:12px;font-size:10px}.dashboard-quick-card{min-height:220px}.stat{padding:15px}.stat strong{font-size:24px}}
+@media(max-width:380px){.sex-overview{flex-direction:column}.sex-legend{width:100%;max-width:none}.dashboard-section-heading h2{font-size:18px}}
