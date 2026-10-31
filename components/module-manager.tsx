@@ -15,7 +15,6 @@ const FIELD_MAP: Record<string, {label:string; key:string; type?:string; placeho
   "gestao-gaiola":[{label:"Identificação da gaiola",key:"cage_code"},{label:"Localização",key:"location"},{label:"Capacidade",key:"capacity"},{label:"Observações",key:"notes",type:"textarea"}],
   "historico-ave":[{label:"Tipo de acontecimento",key:"event_type",placeholder:"Transferência, nascimento, falecimento..."},{label:"Data",key:"date",type:"date"},{label:"Descrição",key:"description",type:"textarea"}],
   "comportamento":[{label:"Data",key:"date",type:"date"},{label:"Comportamento observado",key:"behavior",type:"textarea"},{label:"Observações",key:"notes",type:"textarea"}],
-  "sms":[{label:"Telefone",key:"phone"},{label:"Mensagem",key:"message",type:"textarea"},{label:"Data prevista",key:"scheduled_at",type:"datetime-local"}],
   "reproducao":[{label:"Evento",key:"event"},{label:"Data",key:"date",type:"date"},{label:"Casal / referência",key:"pair"},{label:"Ninhada / filhotes",key:"offspring"},{label:"Observações",key:"notes",type:"textarea"}],
   "doencas":[{label:"Ocorrência",key:"condition"},{label:"Data",key:"date",type:"date"},{label:"Diagnóstico informado",key:"diagnosis",type:"textarea"},{label:"Observações",key:"notes",type:"textarea"}],
   "medicamentos":[{label:"Medicamento",key:"medicine"},{label:"Dose / orientação",key:"dose"},{label:"Início",key:"start_date",type:"date"},{label:"Fim",key:"end_date",type:"date"},{label:"Observações",key:"notes",type:"textarea"}],
