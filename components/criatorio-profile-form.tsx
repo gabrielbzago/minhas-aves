@@ -3,6 +3,8 @@
 import { FormEvent, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
+const canvasSizeLabel = (bytes: number) => `${Math.max(1, Math.round(bytes / 1024))} KB`;
+
 export default function CriatorioProfileForm({ profile, email, logoUrl }: { profile: any; email: string; logoUrl?: string | null }) {
   const supabase = createClient();
   const [name, setName] = useState(profile?.criatorio_name || "");
@@ -18,24 +20,45 @@ export default function CriatorioProfileForm({ profile, email, logoUrl }: { prof
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  async function uploadLogo(file: File) {
+  async function optimizeLogo(file: File): Promise<File> {
     if (!file.type.startsWith("image/")) throw new Error("Escolha uma imagem PNG, JPG ou WEBP.");
-    if (file.size > 2 * 1024 * 1024) throw new Error("A logo deve ter no máximo 2 MB.");
+    let bitmap: ImageBitmap;
+    try { bitmap = await createImageBitmap(file); }
+    catch { throw new Error("Não foi possível abrir essa imagem. Escolha um PNG, JPG ou WEBP válido."); }
+    const maxSide = 512;
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) { bitmap.close(); throw new Error("Não foi possível preparar a imagem."); }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const toBlob = (quality: number) => new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Falha ao compactar a logo.")), "image/webp", quality)
+    );
+    let blob = await toBlob(0.88);
+    for (const quality of [0.82, 0.76, 0.68, 0.60]) {
+      if (blob.size <= 300 * 1024) break;
+      blob = await toBlob(quality);
+    }
+    if (blob.size > 300 * 1024) throw new Error("Não foi possível reduzir a logo para até 300 KB. Escolha uma imagem mais simples.");
+    return new File([blob], "logo.webp", { type: "image/webp", lastModified: Date.now() });
+  }
+
+  async function uploadLogo(originalFile: File) {
+    const file = await optimizeLogo(originalFile);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Sessão expirada. Entre novamente.");
-    const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-    const path = `${user.id}/logo-${Date.now()}.${ext}`;
-    const { error: uploadError } = await supabase.storage.from("criatorio-brand").upload(path, file, { upsert: true, contentType: file.type, cacheControl: "3600" });
+    const path = `${user.id}/logo.webp`;
+    const { error: uploadError } = await supabase.storage.from("criatorio-brand").upload(path, file, { upsert: true, contentType: "image/webp", cacheControl: "3600" });
     if (uploadError) throw new Error(`Falha ao enviar a logo para o Storage: ${uploadError.message}`);
-    // Persiste o caminho imediatamente: o upload não depende de um segundo clique em Salvar.
     const { error: pathError } = await supabase.from("profiles").update({ criatorio_logo_path: path }).eq("id", user.id);
-    if (pathError) {
-      await supabase.storage.from("criatorio-brand").remove([path]);
-      throw new Error(`A imagem foi enviada, mas não foi possível vinculá-la ao perfil: ${pathError.message}`);
-    }
+    if (pathError) throw new Error(`A imagem foi enviada, mas não foi possível vinculá-la ao perfil: ${pathError.message}`);
     setLogoPath(path);
     setLogoPreview(URL.createObjectURL(file));
-    setMessage("Logo enviada e vinculada ao criatório. Ela já pode aparecer no dashboard e nos cartões.");
+    setMessage(`Logo otimizada e vinculada! ${canvasSizeLabel(file.size)}. Recomendado: imagem quadrada, até 512 × 512 px e 300 KB.`);
   }
 
   async function submit(e: FormEvent) {
@@ -73,7 +96,7 @@ export default function CriatorioProfileForm({ profile, email, logoUrl }: { prof
           {(logoPreview || logoUrl || logoPath) && <div style={{width:86,height:86,borderRadius:16,border:"1px solid var(--border)",background:"#fff",display:"grid",placeItems:"center",overflow:"hidden"}}>{(logoPreview || logoUrl) ? <img src={logoPreview || logoUrl || ""} alt="Logo do criatório" style={{width:"100%",height:"100%",objectFit:"contain"}} /> : <div style={{fontSize:11,color:"var(--muted)",textAlign:"center"}}>Logo vinculada; recarregue para visualizar</div>}</div>}
           <input type="file" accept="image/png,image/jpeg,image/webp" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;setError("");try{await uploadLogo(file)}catch(err:any){setError(err.message||"Não foi possível enviar a logo.")}}}/>
         </div>
-        <small style={{color:"var(--muted)"}}>PNG, JPG ou WEBP. Até 2 MB. A imagem é privada e vinculada automaticamente ao seu perfil após o envio.</small>
+        <small style={{color:"var(--muted)"}}>Recomendado: imagem quadrada de até 512 × 512 px e 300 KB. O Apollo redimensiona e compacta automaticamente imagens maiores antes do envio.</small>
       </div>
     </div>
     <div className="form-actions"><button className="btn btn-primary" disabled={saving}>{saving?"Salvando...":"Salvar identidade do criatório"}</button></div>

@@ -200,6 +200,8 @@ table{width:100%;border-collapse:collapse;min-width:720px}th,td{padding:14px 15p
   .mobile-menu-close{border:1px solid var(--line);background:#fff;color:var(--text);width:38px;height:38px;border-radius:11px;display:grid;place-items:center}
   .mobile-plan-badge{margin:12px 14px 4px;padding:10px 12px;border-radius:12px;background:var(--primary-soft);color:var(--primary-dark);font-size:11px}
   .mobile-nav{overflow-y:auto;padding:4px 12px 28px;display:grid;gap:3px}
+  .mobile-drawer-footer{flex:0 0 auto;padding:12px 14px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:#fff}
+  .mobile-drawer-footer button{width:100%;min-height:46px;border:1px solid #f0caca;border-radius:11px;background:#fff7f7;color:#b42318;display:flex;align-items:center;gap:10px;padding:10px 13px;font-weight:800;font-size:14px;cursor:pointer}
   .mobile-nav-title{font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:13px 7px 6px}
   .mobile-nav>a{min-height:44px;padding:10px 11px;border-radius:11px;display:flex;align-items:center;gap:10px;color:var(--text);font-size:13px;border:1px solid transparent}
   .mobile-nav>a:hover,.mobile-nav>a:active{background:var(--primary-soft);color:var(--primary-dark)}

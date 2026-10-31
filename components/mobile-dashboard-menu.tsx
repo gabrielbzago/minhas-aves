@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import { Home, Bird, Layers3, CreditCard, Settings, Stethoscope, LockKeyhole, CalendarDays, X, Menu } from "lucide-react";
+import { Home, Bird, Layers3, CreditCard, Settings, Stethoscope, LockKeyhole, CalendarDays, X, Menu, LogOut } from "lucide-react";
 import { FEATURES } from "@/lib/features";
 import { hasFeature, normalizePlan, planLabel, hasFeatureAccess } from "@/lib/plans";
 
@@ -22,6 +24,8 @@ const baseLinks=[
 
 export default function MobileDashboardMenu({plan,isVeterinarian=false,amadorTrialActive=false}:{plan:string;isVeterinarian?:boolean;amadorTrialActive?:boolean}){
   const [open,setOpen]=useState(false);
+  const router=useRouter();
+  async function handleSignOut(){ await createClient().auth.signOut(); router.replace("/login"); router.refresh(); }
   const normalized=normalizePlan(plan);
   const tierLabel=planLabel(normalized);
   return <>
@@ -42,6 +46,7 @@ export default function MobileDashboardMenu({plan,isVeterinarian=false,amadorTri
           </Link>
         })}
       </nav>
+      <div className="mobile-drawer-footer"><button type="button" onClick={handleSignOut}><LogOut size={18}/><span>Sair da conta</span></button></div>
     </aside>
   </>;
 }

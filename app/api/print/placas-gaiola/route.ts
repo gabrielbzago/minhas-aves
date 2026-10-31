@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { hasExclusiveFeature } from "@/lib/member-features";
 const formatDateBR=(value:any)=>{if(!value)return "—";const raw=String(value).slice(0,10);const m=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[3]}/${m[2]}/${m[1]}`:String(value)};
 const esc=(x:any)=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]!));
-const sex=(s:string)=>({macho:"M",femea:"F",indeterminado:"—"} as any)[s]||s||"—";
+const sex=(s:string)=>({macho:"Macho",femea:"Fêmea",indeterminado:"Não informado"} as any)[s]||s||"—";
 export async function GET(request:Request){
  const {user}=await requireUser(); const db=createAdminClient();
  const ids=[...new Set((new URL(request.url).searchParams.get("ids")||"").split(",").map(x=>x.trim()).filter(Boolean))];

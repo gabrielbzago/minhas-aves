@@ -7,7 +7,7 @@ import { CARD_COLORS, DEFAULT_CARD_COLOR, isCardColorKey } from "@/lib/card-colo
 const esc=(x:any)=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]!));
 const hexMix=(hex:string,amount:number)=>{const n=parseInt(hex.slice(1),16);const r=n>>16,g=(n>>8)&255,b=n&255;const mix=(v:number)=>Math.max(0,Math.min(255,Math.round(v+(255-v)*amount)));return `#${[mix(r),mix(g),mix(b)].map(v=>v.toString(16).padStart(2,"0")).join("")}`};
 const formatDateBR=(value:any)=>{if(!value)return "—";const raw=String(value).slice(0,10);const m=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[3]}/${m[2]}/${m[1]}`:String(value)};
-const sexLabel=(s:string)=>({macho:"M",femea:"F",indeterminado:"—"} as any)[s]||s||"—";
+const sexLabel=(s:string)=>({macho:"Macho",femea:"Fêmea",indeterminado:"Não informado"} as any)[s]||s||"—";
 
 type Bird={id:string;name:string;sex:string;ring_number:string|null;reference_ring_number?:string|null;father_id:string|null;mother_id:string|null;genetic_line?:string|null;genetics?:any};
 

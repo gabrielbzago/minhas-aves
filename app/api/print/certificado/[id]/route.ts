@@ -24,7 +24,7 @@ export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){
  const levels=await buildTree(supabase,root,user.id);
  const species = (Array.isArray(root.species) ? root.species[0] : root.species) as { common_name?: string | null; scientific_name?: string | null } | null;
  let logo="";if(profile.criatorio_logo_path){const {data}=await supabase.storage.from("criatorio-brand").createSignedUrl(profile.criatorio_logo_path,3600);logo=data?.signedUrl||"";}
- const brand=esc(profile.criatorio_name||"Minhas Aves"),owner=esc(profile.full_name||"Criador"),sexLabel=(s:any)=>s==="macho"?"Macho":s==="femea"?"Fêmea":"Não informado";
+ const brand=esc(profile.criatorio_name||"Minhas Aves"),owner=esc(profile.full_name||"Criador"),sexLabel=(s:any)=>{const v=String(s??"").trim().toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g,"");return v==="m"||v==="macho"?"Macho":v==="f"||v==="femea"?"Fêmea":"Não informado"};
  const titles=["Ave certificada","Pais","Avós","Bisavós","Trisavós"];
  const labels=[
   ["Pai","Mãe"],
