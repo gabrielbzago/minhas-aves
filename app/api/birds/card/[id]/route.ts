@@ -42,7 +42,7 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
  const themeParam=new URL(request.url).searchParams.get("theme"); const theme=isCardColorKey(themeParam)?themeParam:DEFAULT_CARD_COLOR; const accent=CARD_COLORS[theme].hex; const accentDark=hexMix(accent,-0.42); const accentBorder=hexMix(accent,0.58); const accentLight=hexMix(accent,0.88);
  let {data:profile,error:pe}=await db.from("profiles").select("plan,role,full_name,ctf_number,criatorio_name,criatorio_logo_path,amador_trial_eligible,amador_trial_started_at,amador_trial_ends_at").eq("id",user.id).maybeSingle();
  const trial=(!preview)?await ensureAmadorTrialOnFirstUse(db,user.id,"cartao-gaiola"):null;
- if(trial?.profile) profile=trial.profile;
+ if(trial?.profile) profile={...profile,...trial.profile};
  if(pe) return new Response(`Erro ao carregar perfil: ${pe.message}`,{status:500});
  if(!profile) return new Response("Perfil não encontrado para o usuário autenticado.",{status:404});
  const plan=effectivePlan(profile.plan,profile.role);
