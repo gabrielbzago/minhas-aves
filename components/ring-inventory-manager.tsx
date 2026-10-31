@@ -67,21 +67,21 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
     {error&&<div className="error" role="alert">{error}</div>}
     <div className="form-card" style={{marginTop:16}}>
       <h3>Cadastrar anilha no estoque</h3>
-      <p>Cadastre cada anilha individualmente. O número é exclusivo e o sexo começa como indefinido.</p>
+      <p>Informe a espécie cadastrada no catálogo do Apollo e vincule os pais já existentes no seu plantel. Cada número é individual e o sexo começa como indefinido.</p>
       <form onSubmit={add}><div className="form-grid">
         <div className="field"><label>Número da anilha *</label><input required value={form.ring_number} onChange={e=>set("ring_number",e.target.value)} placeholder="Ex.: 001234"/></div>
-        <div className="field"><label>Espécie *</label><select required value={form.species_id} onChange={e=>set("species_id",e.target.value)}><option value="">Selecione a espécie</option>{species.map((s:any)=><option key={s.id} value={s.id}>{s.common_name} · {s.scientific_name}</option>)}</select></div>
-        <div className="field"><label>Pai da linhagem (opcional)</label><select value={form.father_id} onChange={e=>set("father_id",e.target.value)}><option value="">Não informado</option>{birds.filter((b:any)=>b.sex==="macho").map((b:any)=><option key={b.id} value={b.id}>{b.name} · {b.ring_number||"sem anilha"}</option>)}</select></div>
-        <div className="field"><label>Mãe da linhagem (opcional)</label><select value={form.mother_id} onChange={e=>set("mother_id",e.target.value)}><option value="">Não informado</option>{birds.filter((b:any)=>b.sex==="femea").map((b:any)=><option key={b.id} value={b.id}>{b.name} · {b.ring_number||"sem anilha"}</option>)}</select></div>
+        <div className="field"><label>Espécie *</label><select required value={form.species_id} onChange={e=>setForm((x:any)=>({...x,species_id:e.target.value,father_id:"",mother_id:""}))}><option value="">Selecione a espécie</option>{species.map((s:any)=><option key={s.id} value={s.id}>{s.common_name} · {s.scientific_name}</option>)}</select></div>
+        <div className="field"><label>Pai da anilha (macho cadastrado da mesma espécie)</label><select value={form.father_id} onChange={e=>set("father_id",e.target.value)}><option value="">Não informado</option>{birds.filter((b:any)=>b.sex==="macho" && (!form.species_id || b.species_id===form.species_id)).map((b:any)=><option key={b.id} value={b.id}>{b.name} · {b.ring_number||"sem anilha"}</option>)}</select></div>
+        <div className="field"><label>Mãe da anilha (fêmea cadastrada da mesma espécie)</label><select value={form.mother_id} onChange={e=>set("mother_id",e.target.value)}><option value="">Não informado</option>{birds.filter((b:any)=>b.sex==="femea" && (!form.species_id || b.species_id===form.species_id)).map((b:any)=><option key={b.id} value={b.id}>{b.name} · {b.ring_number||"sem anilha"}</option>)}</select></div>
         <div className="field full"><label>Observações</label><textarea rows={3} value={form.notes} onChange={e=>set("notes",e.target.value)} placeholder="Fornecedor, lote, cor, tamanho, observações..."/></div>
       </div><div className="form-actions"><button className="btn btn-primary" disabled={busy}>{busy?"Salvando...":"Cadastrar anilha"}</button></div></form>
     </div>
     <div className="form-card" style={{marginTop:16}}>
       <h3>Aplicar anilha em filhote</h3>
-      <p>Selecione uma anilha disponível e a ave recém-cadastrada no plantel. A baixa acontece automaticamente e o número fica vinculado ao filhote.</p>
+      <p>Selecione uma anilha em estoque e um filhote da mesma espécie. O Apollo vincula o número e os pais registrados na anilha, e realiza a baixa automaticamente.</p>
       <form onSubmit={apply}><div className="form-grid">
         <div className="field"><label>Anilha disponível *</label><select required value={applyRing} onChange={e=>setApplyRing(e.target.value)}><option value="">Selecione</option>{available.map(r=><option key={r.id} value={r.id}>{r.ring_number} · {r.species?.common_name||"Espécie não informada"}</option>)}</select></div>
-        <div className="field"><label>Filhote do plantel *</label><select required value={applyBird} onChange={e=>setApplyBird(e.target.value)}><option value="">Selecione</option>{birds.filter((b:any)=>!b.ring_number).map((b:any)=><option key={b.id} value={b.id}>{b.name} · {b.species?.common_name||"espécie não informada"}</option>)}</select></div>
+        <div className="field"><label>Filhote do plantel *</label><select required value={applyBird} onChange={e=>setApplyBird(e.target.value)}><option value="">Selecione</option>{birds.filter((b:any)=>!b.ring_number && (!available.find(r=>r.id===applyRing)?.species_id || b.species_id===available.find(r=>r.id===applyRing)?.species_id)).map((b:any)=><option key={b.id} value={b.id}>{b.name} · {b.species?.common_name||"espécie não informada"}</option>)}</select></div>
         <div className="field"><label>Sexo (pode definir depois)</label><select value={applySex} onChange={e=>setApplySex(e.target.value)}><option value="indeterminado">Indefinido</option><option value="macho">Macho</option><option value="femea">Fêmea</option></select></div>
       </div><div className="form-actions"><button className="btn btn-primary" disabled={busy||!available.length||!applyBird||!applyRing}>{busy?"Aplicando...":"Aplicar anilha e dar baixa"}</button></div></form>
     </div>

@@ -1,0 +1,17 @@
+GESTÃO DE ANILHAS — APOLLO 0.5.38
+
+A tela dedicada substitui o formulário genérico antigo.
+
+Campos do cadastro:
+- Número exclusivo da anilha
+- Espécie selecionada do catálogo de espécies do Apollo
+- Pai selecionado entre machos do plantel da mesma espécie
+- Mãe selecionada entre fêmeas do plantel da mesma espécie
+- Observações
+- Sexo inicial: indefinido
+
+No cadastro do filhote, a seleção de uma anilha disponível filtra por espécie. A aplicação transfere o número e os pais da anilha para a ficha do filhote e baixa a unidade do estoque.
+
+MIGRAÇÃO:
+Se a migration 0.5.37 já foi executada, execute somente migration_gestao_anilhas_0_5_38.sql.
+Se ainda não foi executada, execute primeiro migration_gestao_anilhas_0_5_37.sql e depois migration_gestao_anilhas_0_5_38.sql.

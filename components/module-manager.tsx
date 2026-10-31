@@ -10,7 +10,6 @@ import { CARD_COLORS, DEFAULT_CARD_COLOR, type CardColorKey } from "@/lib/card-c
 import RingInventoryManager from "@/components/ring-inventory-manager";
 
 const FIELD_MAP: Record<string, {label:string; key:string; type?:string; placeholder?:string}[]> = {
-  "gestao-anilhas":[{label:"Número da anilha",key:"ring_number"},{label:"Tipo",key:"ring_type"},{label:"Data",key:"date",type:"date"},{label:"Observações",key:"notes",type:"textarea"}],
   "galeria-fotos":[{label:"Título da foto",key:"title"},{label:"Descrição",key:"description",type:"textarea"}],
   "gestao-documentos":[{label:"Nome do documento",key:"title"},{label:"Tipo",key:"document_type"},{label:"Número/referência",key:"reference"},{label:"Observações",key:"notes",type:"textarea"}],
   "gestao-gaiola":[{label:"Identificação da gaiola",key:"cage_code"},{label:"Localização",key:"location"},{label:"Capacidade",key:"capacity"},{label:"Observações",key:"notes",type:"textarea"}],
@@ -40,7 +39,7 @@ const SPECIAL: Record<string,{title:string;description:string}> = {
 export default function ModuleManager({module,birds,initialRecords,canImport,vet,species=[]}:any){
  const router=useRouter(); const [cardColor,setCardColor]=useState<CardColorKey>(DEFAULT_CARD_COLOR); const [records,setRecords]=useState<any[]>(initialRecords||[]); const [birdId,setBirdId]=useState(""); const [title,setTitle]=useState(""); const [data,setData]=useState<Record<string,string>>({}); const [busy,setBusy]=useState(false); const [error,setError]=useState(""); const [file,setFile]=useState<File|null>(null);
  const fields=FIELD_MAP[module]||[{label:"Título",key:"title"},{label:"Observações",key:"notes",type:"textarea"}];
- if(module==="gestao-anilhas") return <RingInventoryManager birds={birds||[]} species={species||[]}/>;
+ if(String(module).trim().toLowerCase()==="gestao-anilhas") return <RingInventoryManager birds={birds||[]} species={species||[]}/>;
  const set=(k:string,v:string)=>setData(x=>({...x,[k]:v}));
  async function save(e:any){
   e.preventDefault(); setBusy(true); setError(""); const c=createClient();

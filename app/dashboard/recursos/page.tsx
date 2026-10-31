@@ -23,7 +23,7 @@ export default async function RecursosPage({searchParams}:{searchParams:Promise<
  }
  const amadorTrialActive=isAmadorTrialActive({plan:profile?.plan,role:profile?.role,eligible:profile?.amador_trial_eligible,startedAt:trialStart,endsAt:trialEnd});
  const [{data:birds},{data:records},{data:media},{data:vet},{data:species}]=await Promise.all([
-   supabase.from("birds").select("id,name,sex,ring_number,birth_date,is_genealogy_reference,species:species_id(common_name,scientific_name)").eq("is_genealogy_reference",false).order("name"),
+   supabase.from("birds").select("id,name,sex,ring_number,birth_date,species_id,is_genealogy_reference,species:species_id(common_name,scientific_name)").eq("is_genealogy_reference",false).order("name"),
    module?supabase.from("bird_module_records").select("id,title,data,event_date,created_at,bird_id,birds:bird_id(name)").eq("module_code",module).order("created_at",{ascending:false}).limit(50):Promise.resolve({data:[]}),
    module==="galeria-fotos"||module==="gestao-documentos"?supabase.from("bird_media").select("id,title,storage_path,mime_type,created_at,bird_id").eq("kind",module==="galeria-fotos"?"foto":"documento").order("created_at",{ascending:false}).limit(50):Promise.resolve({data:[]}),
    module==="agendar-veterinario"?supabase.from("vet_profiles").select("*").limit(1).maybeSingle():Promise.resolve({data:null}),
