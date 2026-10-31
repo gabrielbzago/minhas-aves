@@ -56,7 +56,7 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string}>}
  if(!b) return new Response("Ave não encontrada para o usuário autenticado.",{status:404});
  const species = Array.isArray((b as any).species) ? (b as any).species[0] : (b as any).species;
  const levels=await loadGenerations(db,b,user.id); const children=await descendants(db,b.id,user.id);
- let logoUrl=""; if(profile.criatorio_logo_path){const {data}=await db.storage.from("criatorio-brand").createSignedUrl(profile.criatorio_logo_path,3600);logoUrl=data?.signedUrl||"";}
+ let logoUrl=""; if(profile.criatorio_logo_path){const {data,error:logoError}=await db.storage.from("criatorio-brand").createSignedUrl(profile.criatorio_logo_path,3600);if(!logoError)logoUrl=data?.signedUrl||"";}
  const brand=esc(profile.criatorio_name||"Minhas Aves"), responsible=esc(profile.full_name||"—"), ctf=esc(profile.ctf_number||"");
  const mutationColors:Record<string,string>={Lutino:"#dfff00",Branco:"#555b61",Preto:"#111111",Canela:"#8b5a2b",Diluido:"#f2dfb5",Laranjeira:"#ffc928",Ardesiaca:"#c0c0c0"}; const mutationBadge=b.mutation_type&&mutationColors[b.mutation_type]?`<div class="mutation-badge"><span class="mutation-star" style="color:${mutationColors[b.mutation_type]};-webkit-text-stroke:.25mm #53645c">★</span><span><b>Mutação</b><small>${esc(b.mutation_type)}</small></span></div>`:"";
  const logo=(alt:string)=>logoUrl?`<img class="logo" src="${esc(logoUrl)}" alt="${alt}">`:``;

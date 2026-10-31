@@ -3,6 +3,7 @@ import {requireUser} from "@/lib/auth";
 import {redirect} from "next/navigation";
 import {cookies} from "next/headers";
 import { effectivePlan } from "@/lib/plans";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { CalendarDays, Egg, Bird, Stethoscope, TrendingUp, ArrowUpRight, Clock3, Sparkles } from "lucide-react";
 export default async function DashboardPage({searchParams}:{searchParams?:Promise<{mode?:string}>}){
  const {supabase,user}=await requireUser();
@@ -49,8 +50,10 @@ export default async function DashboardPage({searchParams}:{searchParams?:Promis
  const maleAngle=birdCount?((femaleCount+maleCount)/birdCount)*360:0;
  let logoUrl:string|null=null;
  if(profile?.criatorio_logo_path){
-  const {data:logoData}=await supabase.storage.from("criatorio-brand").createSignedUrl(profile.criatorio_logo_path,60*60);
-  logoUrl=logoData?.signedUrl||null;
+  // Usa o cliente administrativo no servidor para não depender da policy SELECT do Storage.
+  const admin=createAdminClient();
+  const {data:logoData,error:logoError}=await admin.storage.from("criatorio-brand").createSignedUrl(profile.criatorio_logo_path,60*60);
+  if(!logoError) logoUrl=logoData?.signedUrl||null;
  }
  const ownerEmail=(process.env.OWNER_EMAIL||'gabrielbzago@gmail.com').trim().toLowerCase();
  const isOwner=(profile?.role==='owner') || ((user.email||'').trim().toLowerCase()===ownerEmail);

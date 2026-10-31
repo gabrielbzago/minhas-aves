@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-export default function CriatorioProfileForm({ profile, email }: { profile: any; email: string }) {
+export default function CriatorioProfileForm({ profile, email, logoUrl }: { profile: any; email: string; logoUrl?: string | null }) {
   const supabase = createClient();
   const [name, setName] = useState(profile?.criatorio_name || "");
   const [fullName, setFullName] = useState(profile?.full_name || "");
@@ -25,10 +25,17 @@ export default function CriatorioProfileForm({ profile, email }: { profile: any;
     if (!user) throw new Error("Sessão expirada. Entre novamente.");
     const ext = file.name.split(".").pop()?.toLowerCase() || "png";
     const path = `${user.id}/logo-${Date.now()}.${ext}`;
-    const { error: uploadError } = await supabase.storage.from("criatorio-brand").upload(path, file, { upsert: true, contentType: file.type });
-    if (uploadError) throw uploadError;
+    const { error: uploadError } = await supabase.storage.from("criatorio-brand").upload(path, file, { upsert: true, contentType: file.type, cacheControl: "3600" });
+    if (uploadError) throw new Error(`Falha ao enviar a logo para o Storage: ${uploadError.message}`);
+    // Persiste o caminho imediatamente: o upload não depende de um segundo clique em Salvar.
+    const { error: pathError } = await supabase.from("profiles").update({ criatorio_logo_path: path }).eq("id", user.id);
+    if (pathError) {
+      await supabase.storage.from("criatorio-brand").remove([path]);
+      throw new Error(`A imagem foi enviada, mas não foi possível vinculá-la ao perfil: ${pathError.message}`);
+    }
     setLogoPath(path);
     setLogoPreview(URL.createObjectURL(file));
+    setMessage("Logo enviada e vinculada ao criatório. Ela já pode aparecer no dashboard e nos cartões.");
   }
 
   async function submit(e: FormEvent) {
@@ -63,10 +70,10 @@ export default function CriatorioProfileForm({ profile, email }: { profile: any;
       <div className="field full">
         <label>Logo do criatório</label>
         <div style={{display:"flex",gap:16,alignItems:"center",flexWrap:"wrap"}}>
-          {(logoPreview || logoPath) && <div style={{width:86,height:86,borderRadius:16,border:"1px solid var(--border)",background:"#fff",display:"grid",placeItems:"center",overflow:"hidden"}}>{logoPreview ? <img src={logoPreview} alt="Prévia da logo" style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain"}} /> : <div style={{fontSize:11,color:"var(--muted)",textAlign:"center"}}>Logo salva</div>}</div>}
+          {(logoPreview || logoUrl || logoPath) && <div style={{width:86,height:86,borderRadius:16,border:"1px solid var(--border)",background:"#fff",display:"grid",placeItems:"center",overflow:"hidden"}}>{(logoPreview || logoUrl) ? <img src={logoPreview || logoUrl || ""} alt="Logo do criatório" style={{width:"100%",height:"100%",objectFit:"contain"}} /> : <div style={{fontSize:11,color:"var(--muted)",textAlign:"center"}}>Logo vinculada; recarregue para visualizar</div>}</div>}
           <input type="file" accept="image/png,image/jpeg,image/webp" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;setError("");try{await uploadLogo(file)}catch(err:any){setError(err.message||"Não foi possível enviar a logo.")}}}/>
         </div>
-        <small style={{color:"var(--muted)"}}>PNG, JPG ou WEBP. Até 2 MB. A logo fica privada na sua conta.</small>
+        <small style={{color:"var(--muted)"}}>PNG, JPG ou WEBP. Até 2 MB. A imagem é privada e vinculada automaticamente ao seu perfil após o envio.</small>
       </div>
     </div>
     <div className="form-actions"><button className="btn btn-primary" disabled={saving}>{saving?"Salvando...":"Salvar identidade do criatório"}</button></div>
