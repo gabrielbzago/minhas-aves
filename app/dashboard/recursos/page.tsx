@@ -22,11 +22,12 @@ export default async function RecursosPage({searchParams}:{searchParams:Promise<
    if(end){ trialStart=new Date(new Date(end).getTime()-30*24*60*60*1000).toISOString(); trialEnd=end; }
  }
  const amadorTrialActive=isAmadorTrialActive({plan:profile?.plan,role:profile?.role,eligible:profile?.amador_trial_eligible,startedAt:trialStart,endsAt:trialEnd});
- const [{data:birds},{data:records},{data:media},{data:vet}]=await Promise.all([
+ const [{data:birds},{data:records},{data:media},{data:vet},{data:species}]=await Promise.all([
    supabase.from("birds").select("id,name,sex,ring_number,birth_date,is_genealogy_reference,species:species_id(common_name,scientific_name)").eq("is_genealogy_reference",false).order("name"),
    module?supabase.from("bird_module_records").select("id,title,data,event_date,created_at,bird_id,birds:bird_id(name)").eq("module_code",module).order("created_at",{ascending:false}).limit(50):Promise.resolve({data:[]}),
    module==="galeria-fotos"||module==="gestao-documentos"?supabase.from("bird_media").select("id,title,storage_path,mime_type,created_at,bird_id").eq("kind",module==="galeria-fotos"?"foto":"documento").order("created_at",{ascending:false}).limit(50):Promise.resolve({data:[]}),
-   module==="agendar-veterinario"?supabase.from("vet_profiles").select("*").limit(1).maybeSingle():Promise.resolve({data:null})
+   module==="agendar-veterinario"?supabase.from("vet_profiles").select("*").limit(1).maybeSingle():Promise.resolve({data:null}),
+   module==="gestao-anilhas"?supabase.from("species").select("id,common_name,scientific_name").eq("is_active",true).order("common_name"):Promise.resolve({data:[]})
  ]);
  const mediaRows=await Promise.all((media||[]).map(async (m:any)=>{const signed=await supabase.storage.from("bird-media").createSignedUrl(m.storage_path,3600);return {id:m.id,title:m.title||"Arquivo",data:{arquivo:m.storage_path,mime:m.mime_type||""},event_date:null,created_at:m.created_at,url:signed.data?.signedUrl||null,_media:true};}));
  const combinedRecords=[...(records||[]),...mediaRows].sort((a:any,b:any)=>String(b.created_at).localeCompare(String(a.created_at)));
@@ -48,6 +49,6 @@ export default async function RecursosPage({searchParams}:{searchParams:Promise<
     </div>
     <div className="upgrade-actions"><Link className="btn btn-ghost" href="/dashboard/recursos">← Ver todos os módulos</Link></div>
   </div>}
-  {module&&selected&&allowed&&<><div className="module-hero"><div><span className="kicker">{selected.tier==="free"?"GRÁTIS":selected.tier==="amador"?"CRIATÓRIO AMADOR":selected.tier==="profissional"?"CRIATÓRIO PROFISSIONAL":"CRIADOR LENDA"}</span><h2>{selected.title}</h2><p>{selected.description}</p></div><Link className="btn btn-ghost" href="/dashboard/recursos">Todos os módulos</Link></div>{amadorTrialActive&&<div className="trial-banner"><strong>🎁 Seu teste do Amador está ativo</strong><span>Os recursos do Criatório Amador estão liberados até <b>{new Intl.DateTimeFormat("pt-BR",{dateStyle:"short"}).format(new Date(trialEnd!))}</b>.</span></div>}<ModuleManager module={module} birds={birds||[]} initialRecords={combinedRecords} canImport={module==="importacao-anilha"} vet={vet||null}/></>}
+  {module&&selected&&allowed&&<><div className="module-hero"><div><span className="kicker">{selected.tier==="free"?"GRÁTIS":selected.tier==="amador"?"CRIATÓRIO AMADOR":selected.tier==="profissional"?"CRIATÓRIO PROFISSIONAL":"CRIADOR LENDA"}</span><h2>{selected.title}</h2><p>{selected.description}</p></div><Link className="btn btn-ghost" href="/dashboard/recursos">Todos os módulos</Link></div>{amadorTrialActive&&<div className="trial-banner"><strong>🎁 Seu teste do Amador está ativo</strong><span>Os recursos do Criatório Amador estão liberados até <b>{new Intl.DateTimeFormat("pt-BR",{dateStyle:"short"}).format(new Date(trialEnd!))}</b>.</span></div>}<ModuleManager module={module} birds={birds||[]} initialRecords={combinedRecords} canImport={module==="importacao-anilha"} vet={vet||null} species={species||[]}/></>}
  </main>
 }

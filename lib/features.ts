@@ -6,7 +6,7 @@ export type FeatureCode =
 
 export const FEATURES: {code: FeatureCode; title: string; description: string; tier: "free" | "amador" | "profissional" | "lenda"}[] = [
  {code:"importacao-anilha",title:"Importação de Anilha",description:"Importe registros por CSV para acelerar o cadastro do plantel.",tier:"amador"},
- {code:"gestao-anilhas",title:"Gestão de Anilhas",description:"Controle números de anilha e associe cada identificação à ave.",tier:"amador"},
+ {code:"gestao-anilhas",title:"Gestão de Anilhas",description:"Controle o estoque individual de anilhas, aplique nos filhotes e acompanhe a baixa e a genealogia.",tier:"amador"},
  {code:"gestao-ave",title:"Gestão de Ave",description:"Ficha completa da ave, status, datas, registros, pais e genética.",tier:"free"},
  {code:"galeria-fotos",title:"Galeria de Fotos",description:"Organize fotos por ave usando o armazenamento do projeto.",tier:"amador"},
  {code:"gestao-documentos",title:"Gestão de Documentos",description:"Guarde referências de documentos e anexos da ave.",tier:"amador"},
