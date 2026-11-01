@@ -16,9 +16,22 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
   const [applySex,setApplySex]=useState("indeterminado");
   const [query,setQuery]=useState("");
   const [sexDrafts,setSexDrafts]=useState<Record<string,string>>({});
+  const [batchImage,setBatchImage]=useState<File|null>(null);
+  const [batchRows,setBatchRows]=useState<string[]>([]);
+  const [batchUncertain,setBatchUncertain]=useState<string[]>([]);
+  const [batchSpecies,setBatchSpecies]=useState("");
+  const [batchFather,setBatchFather]=useState("");
+  const [batchMother,setBatchMother]=useState("");
+  const [batchNotes,setBatchNotes]=useState("");
+  const [batchBusy,setBatchBusy]=useState(false);
+  const [canBatch,setCanBatch]=useState(false);
+  const [batchMessage,setBatchMessage]=useState("");
+  const [batchError,setBatchError]=useState("");
   const client=createClient();
   async function load(){
     setLoading(true);setError("");
+    const {data:authData}=await client.auth.getUser();
+    if(authData.user){const {data:profile}=await client.from("profiles").select("plan,role").eq("id",authData.user.id).maybeSingle();setCanBatch(profile?.role==="owner"||profile?.role==="veterinarian"||profile?.plan==="profissional"||profile?.plan==="lenda");}
     const {data,error}=await client.from("ring_inventory").select("*,species:species_id(common_name,scientific_name),father:father_id(name,ring_number),mother:mother_id(name,ring_number),applied_bird:applied_to_bird_id(name,ring_number)").order("created_at",{ascending:false});
     if(error)setError(friendlySupabaseError(error,"Não foi possível carregar o estoque. Confira se aplicou a migração SQL no Supabase."));
     else setRows(data||[]);
@@ -84,6 +97,29 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
     if(error)setError(friendlySupabaseError(error,"Não foi possível excluir a anilha."));
     else setRows(rows.filter(r=>r.id!==id));
   }
+  async function readBatchPhoto(){
+    if(!batchImage)return;
+    setBatchBusy(true);setBatchError("");setBatchMessage("");
+    try{
+      const dataUrl=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error("Não foi possível ler a foto."));reader.readAsDataURL(batchImage);});
+      const image=new Image();image.src=dataUrl;await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject;});
+      const scale=Math.min(1,1800/Math.max(image.width,image.height));const canvas=document.createElement("canvas");canvas.width=Math.round(image.width*scale);canvas.height=Math.round(image.height*scale);canvas.getContext("2d")!.drawImage(image,0,0,canvas.width,canvas.height);
+      const optimized=canvas.toDataURL("image/jpeg",0.82);
+      const response=await fetch("/api/rings/import-photo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({image:optimized,mimeType:"image/jpeg"})});
+      const result=await response.json();if(!response.ok)throw new Error(result.error||"Falha ao ler a foto.");
+      setBatchRows(result.ringNumbers||[]);setBatchUncertain(result.uncertain||[]);setBatchNotes(result.notes||"");setBatchMessage(`${(result.ringNumbers||[]).length} número(s) identificados. Revise a lista antes de cadastrar.`);
+    }catch(e:any){setBatchError(e?.message||"Não foi possível ler a foto.");}finally{setBatchBusy(false);}
+  }
+  async function importBatch(){
+    const numbers=batchRows.map(n=>n.trim()).filter(Boolean);
+    if(!batchSpecies||!numbers.length){setBatchError("Selecione a espécie e confira os números.");return;}
+    setBatchBusy(true);setBatchError("");setBatchMessage("");
+    try{
+      const response=await fetch("/api/rings/import-photo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"import",ringNumbers:numbers,speciesId:batchSpecies,fatherId:batchFather||null,motherId:batchMother||null,notes:batchNotes})});
+      const result=await response.json();if(!response.ok)throw new Error(result.error||"Não foi possível cadastrar o lote.");
+      setBatchMessage(`${result.imported} anilha(s) cadastrada(s) com sucesso no estoque.`);setBatchRows([]);setBatchImage(null);setBatchUncertain([]);setBatchFather("");setBatchMother("");await load();
+    }catch(e:any){setBatchError(e?.message||"Falha ao importar o lote.");}finally{setBatchBusy(false);}
+  }
   return <div className="module-manager">
     <div className="stat-grid">
       <div className="stat"><small>Total de anilhas</small><strong>{rows.length}</strong></div>
@@ -121,6 +157,19 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
       </div>}
     </section>
     {error&&<div className="error" role="alert">{error}</div>}
+    {canBatch&&<section className="form-card" style={{marginTop:16,border:"1px solid var(--border,#dce5df)"}}>
+      <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",flexWrap:"wrap"}}><div><h3 style={{marginBottom:4}}>Importar estoque por foto</h3><p style={{margin:0}}>Fotografe uma lista de anilhas. A IA identifica os números e prepara vários cadastros individuais de uma só vez.</p></div><span className="badge">Profissional e Lenda</span></div>
+      <div className="form-grid" style={{marginTop:14}}>
+        <div className="field full"><label>Foto da lista de anilhas</label><input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={e=>{setBatchImage(e.target.files?.[0]||null);setBatchRows([]);setBatchError("");setBatchMessage("");}}/><small>JPG, PNG ou WEBP. Prefira foto reta, com boa iluminação e toda a lista visível.</small></div>
+        <div className="field"><label>Espécie do lote *</label><select value={batchSpecies} onChange={e=>setBatchSpecies(e.target.value)}><option value="">Selecione a espécie</option>{species.map((sp:any)=><option key={sp.id} value={sp.id}>{sp.common_name} · {sp.scientific_name}</option>)}</select></div>
+        <div className="field"><label>Pai (opcional, mesmo para o lote)</label><select value={batchFather} onChange={e=>setBatchFather(e.target.value)}><option value="">Não informado</option>{birds.filter((b:any)=>b.sex==="macho"&&(!batchSpecies||b.species_id===batchSpecies)).map((b:any)=><option key={b.id} value={b.id}>{b.name} · {b.ring_number||"sem anilha"}</option>)}</select></div>
+        <div className="field"><label>Mãe (opcional, mesmo para o lote)</label><select value={batchMother} onChange={e=>setBatchMother(e.target.value)}><option value="">Não informado</option>{birds.filter((b:any)=>b.sex==="femea"&&(!batchSpecies||b.species_id===batchSpecies)).map((b:any)=><option key={b.id} value={b.id}>{b.name} · {b.ring_number||"sem anilha"}</option>)}</select></div>
+      </div>
+      <div className="form-actions"><button type="button" className="btn btn-primary" disabled={!batchImage||batchBusy} onClick={readBatchPhoto}>{batchBusy?"Lendo imagem...":"Ler lista com IA"}</button></div>
+      {batchError&&<div className="error" role="alert" style={{marginTop:12}}>{batchError}</div>}{batchMessage&&<p role="status" style={{marginTop:12,color:"var(--success,#16834a)"}}>{batchMessage}</p>}
+      {batchUncertain.length>0&&<div style={{marginTop:10,padding:12,borderRadius:10,background:"var(--surface-secondary,#f4f6f4)"}}><strong>Linhas que precisam de conferência</strong><ul>{batchUncertain.map((v,i)=><li key={i}>{v}</li>)}</ul></div>}
+      {batchRows.length>0&&<div style={{marginTop:14}}><div style={{display:"flex",justifyContent:"space-between",gap:8,flexWrap:"wrap",alignItems:"center"}}><strong>Revise os números identificados ({batchRows.length})</strong><small>Todos começam como disponíveis e sexo indefinido.</small></div><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:8,marginTop:10}}>{batchRows.map((n,i)=><div key={i} className="field"><label>Anilha {i+1}</label><input value={n} onChange={e=>setBatchRows(rows=>rows.map((v,j)=>j===i?e.target.value: v))}/></div>)}</div><div className="form-actions"><button type="button" className="btn btn-primary" disabled={batchBusy||!batchSpecies||!batchRows.some(n=>n.trim())} onClick={importBatch}>{batchBusy?"Cadastrando lote...":`Cadastrar ${batchRows.length} anilha(s)`}</button><button type="button" className="btn btn-secondary" disabled={batchBusy} onClick={()=>{setBatchRows([]);setBatchMessage("");}}>Descartar leitura</button></div></div>}
+    </section>}
     <div className="form-card" style={{marginTop:16}}>
       <h3>Cadastrar anilha no estoque</h3>
       <p>Informe a espécie cadastrada no catálogo do Apollo e vincule os pais já existentes no seu plantel. Cada número é individual e o sexo começa como indefinido.</p>
