@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import { Home, Bird, Layers3, CreditCard, Settings, Stethoscope, LockKeyhole, CalendarDays, X, Menu, LogOut } from "lucide-react";
+import { Home, Bird, Layers3, CreditCard, Settings, Stethoscope, LockKeyhole, CalendarDays, X, Menu, LogOut, ShieldCheck } from "lucide-react";
 import { FEATURES } from "@/lib/features";
 import { normalizePlan, planLabel, hasFeatureAccess } from "@/lib/plans";
 
@@ -22,7 +22,7 @@ const baseLinks=[
   ["/dashboard/transferencias","Transferências",Bird],
 ] as const;
 
-export default function MobileDashboardMenu({plan,isVeterinarian=false,amadorTrialActive=false}:{plan:string;isVeterinarian?:boolean;amadorTrialActive?:boolean}){
+export default function MobileDashboardMenu({plan,isVeterinarian=false,amadorTrialActive=false,isOwnerPreview=false}:{plan:string;isVeterinarian?:boolean;amadorTrialActive?:boolean;isOwnerPreview?:boolean}){
   const [open,setOpen]=useState(false);
   const router=useRouter();
   async function handleSignOut(){ await createClient().auth.signOut(); router.replace("/login"); router.refresh(); }
@@ -34,6 +34,11 @@ export default function MobileDashboardMenu({plan,isVeterinarian=false,amadorTri
     <aside className={`mobile-drawer ${open?"open":""}`} aria-hidden={!open}>
       <div className="mobile-drawer-head"><div className="apollo-system-brand"><img src="/branding/apollo-logo.png" alt="Apollo — Gestão de Criatórios" /></div><button className="mobile-menu-close" aria-label="Fechar menu" onClick={()=>setOpen(false)}><X size={21}/></button></div>
       <div className="mobile-plan-badge">Plano atual: <strong>{tierLabel}</strong></div>
+      {isOwnerPreview&&<section className="mobile-owner-mode-panel" aria-label="Controles do Owner">
+        <div className="mobile-nav-title"><ShieldCheck size={14}/> CONTROLES DO OWNER</div>
+        <Link href="/dashboard/owner/veterinario-preview" onClick={()=>setOpen(false)}><Stethoscope size={17}/><span>Visão veterinário</span></Link>
+        <button type="button" onClick={async()=>{try{const r=await fetch('/api/owner/preview-mode',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({enabled:false})});if(!r.ok)throw new Error('Não foi possível voltar ao Owner.');setOpen(false);router.replace('/dashboard/owner');router.refresh();}catch(e){window.alert(e instanceof Error?e.message:'Falha ao voltar para Owner.');}}}><ShieldCheck size={17}/><span>Voltar para Owner</span></button>
+      </section>}
       <nav className="mobile-nav">
         <div className="mobile-nav-title">Navegação</div>
         {baseLinks.map(([href,label,Icon])=><Link href={href} key={href} onClick={()=>setOpen(false)}><Icon size={18}/><span>{label}</span></Link>)}
