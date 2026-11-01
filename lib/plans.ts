@@ -16,8 +16,8 @@ const commonPaid = [
 export const PLAN_FEATURES: Record<PlanCode, Set<string>> = {
   free: new Set(["gestao-ave", "historico-ave", "genealogia", "painel", "especies", "cartao-gaiola", "agendar-veterinario"]),
   amador: new Set([...commonPaid, "agendar-veterinario"]),
-  profissional: new Set([...commonPaid, "reproducao", "doencas", "medicamentos", "genotipagem", "sexagem", "agendar-veterinario", "modulo-veterinario"]),
-  lenda: new Set([...commonPaid, "reproducao", "doencas", "medicamentos", "genotipagem", "sexagem", "agendar-veterinario", "consulta-veterinaria-inclusa", "modulo-veterinario"]),
+  profissional: new Set([...commonPaid, "reproducao", "doencas", "medicamentos", "genotipagem", "sexagem", "agendar-veterinario", "modulo-veterinario", "cadastro-inteligente-foto"]),
+  lenda: new Set([...commonPaid, "reproducao", "doencas", "medicamentos", "genotipagem", "sexagem", "agendar-veterinario", "consulta-veterinaria-inclusa", "modulo-veterinario", "cadastro-inteligente-foto"]),
 };
 
 export const PLAN_ORDER: PlanCode[] = ["free", "amador", "profissional", "lenda"];
@@ -33,12 +33,12 @@ export const PLAN_BENEFITS: Record<PlanCode, string[]> = {
   ],
   profissional: [
     "Tudo do Criatório Amador", "Gestão de reprodução", "Doenças e acompanhamento", "Medicamentos",
-    "Genotipagem", "Sexagem", "Módulo Veterinário completo",
+    "Genotipagem", "Sexagem", "Cadastro inteligente de aves por foto com IA", "Módulo Veterinário completo",
   ],
   lenda: [
     "Tudo do Criatório Profissional", "1 consulta veterinária inclusa por período anual pago",
     "1 ave por consulta inclusa", "Histórico veterinário permanente", "Prontuário + receita em PDF",
-    "Novo benefício a cada renovação", "Módulo Veterinário completo",
+    "Novo benefício a cada renovação", "Cadastro inteligente de aves por foto com IA", "Módulo Veterinário completo",
   ],
 };
 

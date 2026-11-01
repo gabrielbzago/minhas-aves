@@ -2,11 +2,15 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function BirdForm({ species, birds, initialBird }: { species: any[]; birds: any[]; initialBird?: any }) {
+export default function BirdForm({ species, birds, initialBird, canUseAi = false }: { species: any[]; birds: any[]; initialBird?: any; canUseAi?: boolean }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [ringChecking, setRingChecking] = useState(false);
+  const [aiScanning, setAiScanning] = useState(false);
+  const [aiScanError, setAiScanError] = useState("");
+  const [aiScanInfo, setAiScanInfo] = useState("");
+  const [aiFileInputKey, setAiFileInputKey] = useState(0);
   const [stockRings, setStockRings] = useState<any[]>([]);
   const [stockRingId, setStockRingId] = useState("");
   const [f, setF] = useState<any>(initialBird
@@ -26,6 +30,55 @@ export default function BirdForm({ species, birds, initialBird }: { species: any
   const set = (k: string, v: any) => setF((x: any) => ({ ...x, [k]: v }));
 
   useEffect(() => { if (!initialBird) fetch("/api/rings?status=disponivel").then(r=>r.ok?r.json():{data:[]}).then(x=>setStockRings(x.data||[])).catch(()=>setStockRings([])); }, [initialBird]);
+
+  async function scanBirdLabel(file?: File) {
+    setAiScanError(""); setAiScanInfo("");
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { setAiScanError("Use uma imagem JPG, PNG ou WEBP."); return; }
+    if (file.size > 8 * 1024 * 1024) { setAiScanError("A imagem deve ter no máximo 8 MB."); return; }
+    setAiScanning(true);
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 1800 / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext("2d");
+      if (!context) { bitmap.close(); throw new Error("Não foi possível preparar a imagem."); }
+      context.fillStyle = "#ffffff"; context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close();
+      const compressed = await new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Falha ao otimizar a imagem.")), "image/jpeg", 0.84));
+      if (compressed.size > 3 * 1024 * 1024) throw new Error("A imagem continua muito pesada. Tente uma foto com menor resolução.");
+      const image = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Não foi possível ler a imagem."));
+        reader.onerror = () => reject(new Error("Falha ao abrir a imagem."));
+        reader.readAsDataURL(compressed);
+      });
+      const response = await fetch("/api/ai/parse-bird-label", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image, mimeType: "image/jpeg" }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Não foi possível analisar a plaquinha.");
+      const data = result.data || {};
+      setF((current: any) => ({
+        ...current,
+        name: data.name || current.name,
+        species_id: data.species_id || current.species_id,
+        sex: data.sex || current.sex,
+        birth_date: data.birth_date || current.birth_date,
+        ring_number: data.ring_number || current.ring_number,
+        ibama_registration_number: data.ibama_registration_number || current.ibama_registration_number,
+        ibama_record_type: data.ibama_record_type || current.ibama_record_type,
+        genetic_line: data.genetic_line || current.genetic_line,
+        mutation_type: data.mutation_type || current.mutation_type,
+        notes: data.notes || current.notes,
+        genetics: data.genetics && Object.keys(data.genetics).length ? Object.entries(data.genetics).map(([a,b])=>`${a}:${b}`).join(",") : current.genetics,
+      }));
+      const found = [data.name, data.species_id && "espécie", data.birth_date && "nascimento", data.ring_number && "anilha", data.sex && data.sex !== "indeterminado" && "sexo"].filter(Boolean).length;
+      setAiScanInfo(`Leitura concluída: ${found} informações identificadas. Confira todos os campos antes de salvar.${result.usage ? ` Uso mensal: ${result.usage.used}/${result.usage.limit}.` : ""}`);
+    } catch (error: any) {
+      setAiScanError(error?.message || "Não foi possível analisar a imagem.");
+    } finally { setAiScanning(false); setAiFileInputKey((x: number) => x + 1); }
+  }
 
   async function checkRingAvailability(value: string) {
     const ring = String(value || "").trim();
@@ -133,6 +186,15 @@ export default function BirdForm({ species, birds, initialBird }: { species: any
 
   return <form className="form-card" onSubmit={submit}>
     {error && <div className="error" role="alert">{error}</div>}
+    {!initialBird && (canUseAi ? <section style={{border:"1px solid var(--line)",borderRadius:14,padding:16,marginBottom:18,background:"linear-gradient(135deg,#f3fbf7,#fff)"}}>
+      <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+        <div><strong style={{display:"block",fontSize:15}}>✨ Cadastro Inteligente por Foto</strong><small style={{color:"var(--muted)"}}>Fotografe a plaquinha e deixe a IA preencher os dados que conseguir ler.</small></div>
+        <label className="btn btn-soft" style={{cursor:aiScanning?"wait":"pointer",margin:0,opacity:aiScanning ? 0.65 : 1}}>{aiScanning?"Analisando foto...":"📷 Preencher por foto"}<input key={aiFileInputKey} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={aiScanning} onChange={e=>void scanBirdLabel(e.target.files?.[0])} style={{display:"none"}}/></label>
+      </div>
+      {aiScanError&&<p className="error" role="alert" style={{margin:"10px 0 0"}}>{aiScanError}</p>}
+      {aiScanInfo&&<p style={{margin:"10px 0 0",fontSize:12,color:"var(--primary-dark)",fontWeight:700}}>{aiScanInfo}</p>}
+      <small style={{display:"block",marginTop:8,color:"var(--muted)"}}>Disponível nos planos Profissional e Lenda. JPG, PNG ou WEBP; a imagem é otimizada automaticamente antes do envio. Confira os dados reconhecidos antes de salvar.</small>
+    </section> : <section style={{border:"1px solid var(--line)",borderRadius:14,padding:16,marginBottom:18,background:"#f8fafc"}}><strong>✨ Cadastro Inteligente por Foto</strong><p style={{fontSize:12,color:"var(--muted)",margin:"6px 0 10px"}}>Economize tempo: fotografe a plaquinha e a IA preenche os dados da ave automaticamente. Recurso disponível nos planos Profissional e Lenda.</p><a className="btn btn-soft" href="/dashboard/assinatura">Conhecer planos</a></section>)}
     <div className="form-grid">
       <div className="field"><label>Nome da ave *</label><input required value={f.name} onChange={e => set("name", e.target.value)} placeholder="Ex.: Thor" /></div>
       <div className="field"><label>Espécie *</label><select required value={f.species_id} onChange={e => { set("species_id", e.target.value); setStockRingId(""); }}><option value="">Selecione...</option>{species.map(s => <option key={s.id} value={s.id}>{s.common_name} — {s.scientific_name}</option>)}</select></div>
