@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       if (duplicated.length) return NextResponse.json({ error: `Já existem anilhas com estes números: ${duplicated.slice(0, 12).join(", ")}${duplicated.length > 12 ? "…" : ""}. Remova-as da lista para continuar.`, duplicates: duplicated }, { status: 409 });
       const { data: species } = await supabase.from("species").select("id").eq("id", speciesId).eq("is_active", true).maybeSingle();
       if (!species) return NextResponse.json({ error: "A espécie selecionada não está disponível no catálogo." }, { status: 400 });
-      const motherNumbers = [...new Set(items.map((item) => item.mother_ring_number).filter(Boolean))];
+      const motherNumbers: string[] = [...new Set(items.map((item) => item.mother_ring_number).filter((number): number is string => typeof number === "string" && number.trim().length > 0))];
       const motherByRing = new Map<string, any>();
       if (motherNumbers.length) {
         const { data: mothers, error: motherError } = await supabase.from("birds").select("id,ring_number,name,sex,species_id").eq("user_id", user.id).in("ring_number", motherNumbers);
