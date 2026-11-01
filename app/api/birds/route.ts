@@ -58,6 +58,37 @@ export async function POST(request: Request) {
   const ringInventoryId = !isBulk ? String(body?.ring_inventory_id || "") : "";
   const rows = (isBulk ? body : [body]).map((item: any) => { const copy={...(item||{})}; delete copy.ring_inventory_id; return cleanBirdPayload(copy, user.id); });
 
+  // Nascimento com anilha: valida o estoque e a genealogia no servidor antes
+  // de criar a ave. O navegador não é a fonte de verdade para esses vínculos.
+  let birthRing: any = null;
+  if (ringInventoryId && !isBulk) {
+    const { data: ring, error: ringLookupError } = await supabase
+      .from("ring_inventory")
+      .select("id,ring_number,user_id,status,sex,species_id,father_id,mother_id")
+      .eq("id", ringInventoryId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (ringLookupError || !ring) return NextResponse.json({ data: null, error: "Anilha não encontrada no estoque deste criador." }, { status: 404 });
+    if (ring.status !== "disponivel") return NextResponse.json({ data: null, error: "Esta anilha não está mais disponível. Atualize a tela e selecione outra." }, { status: 409 });
+    const child = rows[0];
+    if (!child?.father_id || !child?.mother_id || child.father_id === child.mother_id) {
+      return NextResponse.json({ data: null, error: "Vincule um pai e uma mãe diferentes antes de registrar o nascimento." }, { status: 400 });
+    }
+    const { data: parents, error: parentsError } = await supabase.from("birds")
+      .select("id,sex,species_id")
+      .eq("user_id", user.id)
+      .in("id", [child.father_id, child.mother_id]);
+    if (parentsError || !parents || parents.length !== 2) return NextResponse.json({ data: null, error: "Não foi possível validar o pai e a mãe no plantel." }, { status: 400 });
+    const father = parents.find((parent: any) => parent.id === child.father_id);
+    const mother = parents.find((parent: any) => parent.id === child.mother_id);
+    if (father?.sex !== "macho" || mother?.sex !== "femea") return NextResponse.json({ data: null, error: "O pai precisa estar cadastrado como macho e a mãe como fêmea." }, { status: 400 });
+    const speciesId = ring.species_id || mother.species_id || null;
+    if (speciesId && (father.species_id !== speciesId || mother.species_id !== speciesId)) return NextResponse.json({ data: null, error: "Pai, mãe e anilha precisam pertencer à mesma espécie." }, { status: 400 });
+    if (child.species_id && speciesId && child.species_id !== speciesId) return NextResponse.json({ data: null, error: "A espécie informada para o filhote não corresponde à espécie da anilha e dos pais." }, { status: 400 });
+    child.species_id = speciesId;
+    birthRing = ring;
+  }
+
   // O downgrade nunca apaga aves. No plano grátis, apenas impede novos cadastros
   // acima do limite; os registros já existentes continuam preservados.
   const { data: profile } = await supabase
@@ -111,17 +142,27 @@ export async function POST(request: Request) {
 
   if (ringInventoryId && !isBulk) {
     const createdBird = result.data?.[0];
+    // Mantém a genealogia idêntica na ficha do filhote e no histórico da anilha.
+    const { data: linkedRing, error: parentLinkError } = await supabase.from("ring_inventory")
+      .update({ father_id: createdBird.father_id, mother_id: createdBird.mother_id, species_id: createdBird.species_id })
+      .eq("id", ringInventoryId).eq("user_id", user.id).eq("status", "disponivel").select("id").maybeSingle();
+    if (parentLinkError || !linkedRing) {
+      await supabase.from("birds").delete().eq("id", createdBird.id).eq("user_id", user.id);
+      return NextResponse.json({ data: null, error: parentLinkError ? friendlySupabaseError(parentLinkError, "Não foi possível vincular a genealogia à anilha. O nascimento não foi concluído.") : "Esta anilha acabou de ser utilizada por outro registro. Atualize o estoque e tente novamente." }, { status: 409 });
+    }
     const { error: applyError } = await supabase.rpc("apply_ring_to_bird", {
       p_ring_id: ringInventoryId,
       p_bird_id: createdBird.id,
       p_sex: createdBird.sex || "indeterminado",
     });
     if (applyError) {
+      await supabase.from("ring_inventory").update({ father_id: birthRing?.father_id ?? null, mother_id: birthRing?.mother_id ?? null, species_id: birthRing?.species_id ?? null }).eq("id", ringInventoryId).eq("user_id", user.id).eq("status", "disponivel");
       await supabase.from("birds").delete().eq("id",createdBird.id).eq("user_id",user.id);
-      return NextResponse.json({data:null,error:friendlySupabaseError(applyError,"A ave não foi cadastrada porque não foi possível aplicar a anilha selecionada. Confira o estoque e tente novamente.")},{status:400});
+      return NextResponse.json({data:null,error:friendlySupabaseError(applyError,"A ave não foi cadastrada porque não foi possível aplicar a anilha selecionada. O estoque foi preservado; atualize a tela e tente novamente.")},{status:400});
     }
-    const {data:updatedBird}=await supabase.from("birds").select("*").eq("id",createdBird.id).single();
-    return NextResponse.json({data:updatedBird,error:null},{status:201});
+    const {data:updatedBird,error:birdReloadError}=await supabase.from("birds").select("*").eq("id",createdBird.id).eq("user_id",user.id).single();
+    if (birdReloadError || !updatedBird) return NextResponse.json({ data: null, error: "O nascimento foi registrado, mas não foi possível confirmar a ficha atualizada. Atualize o plantel antes de tentar novamente." }, { status: 500 });
+    return NextResponse.json({data:updatedBird,error:null,ring_status:"aplicada",ring_number:birthRing?.ring_number},{status:201});
   }
   return NextResponse.json({ data: isBulk ? result.data : result.data?.[0], error: null }, { status: 201 });
 }

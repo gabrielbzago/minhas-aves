@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { friendlySupabaseError } from "@/lib/error-messages";
 
@@ -15,6 +16,7 @@ type Ring = {
 
 export default function SexagemManager({ birds = [] }: { birds: any[] }) {
   const client = createClient();
+  const router = useRouter();
   const [rings, setRings] = useState<Ring[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState("");
@@ -102,9 +104,10 @@ export default function SexagemManager({ birds = [] }: { birds: any[] }) {
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || `Não foi possível registrar o nascimento (HTTP ${response.status}).`);
-      setSuccess(`Nascimento de ${draft.name.trim()} registrado. Anilha ${ring.ring_number} aplicada e sexo mantido indefinido.`);
+      setSuccess(`Nascimento de ${draft.name.trim()} registrado no plantel. Anilha ${ring.ring_number} aplicada; pai, mãe, espécie e data de nascimento vinculados. Sexo mantido indefinido.`);
       setDrafts(current => { const next = { ...current }; delete next[ring.id]; return next; });
       await load();
+      router.refresh();
     } catch (e: any) { setError(e?.message || "Falha ao registrar o nascimento."); }
     finally { setBusyId(""); }
   }
@@ -139,7 +142,7 @@ export default function SexagemManager({ birds = [] }: { birds: any[] }) {
 
     <section className="form-card">
       <h3>Declarar nascimento</h3>
-      <p>Selecione uma anilha disponível com sexo indefinido, informe o nascimento e vincule o pai e a mãe. O Apollo cria a ficha do filhote, aplica a anilha e mantém o sexo indefinido até a sexagem.</p>
+      <p>Selecione uma anilha disponível com sexo indefinido, informe o nascimento e vincule o pai e a mãe. Ao confirmar, o Apollo cadastra o filhote no Meu plantel, aplica a anilha e grava os mesmos vínculos de espécie, pai e mãe no histórico da anilha. A anilha deixa de ficar disponível para novo nascimento e o sexo permanece indefinido até a sexagem.</p>
       {loading ? <div className="empty">Carregando anilhas...</div> : available.length === 0 ? <div className="empty">Não há anilhas disponíveis com sexo indefinido para registrar nascimento.</div> : <div style={{ display: "grid", gap: 16 }}>
         {available.map(ring => {
           const draft = drafts[ring.id] || { name: `Filhote ${ring.ring_number}`, birth_date: "", father_id: ring.father_id || "", mother_id: ring.mother_id || "" };
