@@ -18,22 +18,37 @@ export async function POST(request: Request) {
     }
     const body = await request.json();
     if (body?.action === "import") {
-      const numbers = Array.isArray(body.ringNumbers) ? body.ringNumbers : [];
+      const items: Array<{ ring_number: string; mother_ring_number?: string }> = Array.isArray(body.items)
+        ? body.items.map((item: any) => ({ ring_number: String(item?.ring_number || "").trim(), mother_ring_number: String(item?.mother_ring_number || "").trim() }))
+        : (Array.isArray(body.ringNumbers) ? body.ringNumbers.map((n: unknown) => ({ ring_number: String(n ?? "").trim(), mother_ring_number: "" })) : []);
       const speciesId = String(body.speciesId || "");
-      if (!speciesId || !numbers.length || numbers.length > 300) return NextResponse.json({ error: "Informe a espécie e uma lista válida de até 300 anilhas." }, { status: 400 });
-      const clean: string[] = Array.from(new Set<string>((numbers as unknown[]).map((n: unknown) => String(n ?? "").trim()).filter((n: string) => n.length > 0)));
-      if (!clean.length) return NextResponse.json({ error: "Nenhum número válido foi informado." }, { status: 400 });
-      if (clean.length !== numbers.length) return NextResponse.json({ error: "A lista contém números vazios ou repetidos. Revise antes de importar." }, { status: 400 });
+      if (!speciesId || !items.length || items.length > 300) return NextResponse.json({ error: "Informe a espécie e uma lista válida de até 300 anilhas." }, { status: 400 });
+      if (items.some((item) => !item.ring_number || item.ring_number.length > 120)) return NextResponse.json({ error: "Há números vazios ou inválidos. Revise a lista antes de importar." }, { status: 400 });
+      const clean = items.map((item) => item.ring_number);
+      const unique = new Set(clean.map((n) => n.toLowerCase()));
+      if (unique.size !== clean.length) return NextResponse.json({ error: "A lista contém números repetidos. Revise antes de importar." }, { status: 400 });
       const { data: existing, error: existingError } = await supabase.from("ring_inventory").select("ring_number").eq("user_id", user.id).in("ring_number", clean);
       if (existingError) return NextResponse.json({ error: "Não foi possível conferir duplicidades no estoque." }, { status: 500 });
       const duplicates = new Set((existing || []).map((r: any) => String(r.ring_number).toLowerCase()));
-      const duplicated = clean.filter((n: string) => duplicates.has(n.toLowerCase()));
+      const duplicated = clean.filter((n) => duplicates.has(n.toLowerCase()));
       if (duplicated.length) return NextResponse.json({ error: `Já existem anilhas com estes números: ${duplicated.slice(0, 12).join(", ")}${duplicated.length > 12 ? "…" : ""}. Remova-as da lista para continuar.`, duplicates: duplicated }, { status: 409 });
       const { data: species } = await supabase.from("species").select("id").eq("id", speciesId).eq("is_active", true).maybeSingle();
       if (!species) return NextResponse.json({ error: "A espécie selecionada não está disponível no catálogo." }, { status: 400 });
-      const fatherId = body.fatherId || null, motherId = body.motherId || null;
-      const rows = clean.map((ring_number: string) => ({ user_id: user.id, ring_number, species_id: speciesId, father_id: fatherId, mother_id: motherId, notes: String(body.notes || "Importado por foto em lote").slice(0, 1000), sex: "indeterminado", status: "disponivel" }));
-      const { data, error } = await supabase.from("ring_inventory").insert(rows).select("id,ring_number");
+      const motherNumbers = [...new Set(items.map((item) => item.mother_ring_number).filter(Boolean))];
+      const motherByRing = new Map<string, any>();
+      if (motherNumbers.length) {
+        const { data: mothers, error: motherError } = await supabase.from("birds").select("id,ring_number,name,sex,species_id").eq("user_id", user.id).in("ring_number", motherNumbers);
+        if (motherError) return NextResponse.json({ error: "Não foi possível localizar as matrizes pelo número de anilha." }, { status: 500 });
+        (mothers || []).forEach((bird: any) => motherByRing.set(String(bird.ring_number).trim().toLowerCase(), bird));
+        const unresolved = motherNumbers.filter((number) => !motherByRing.has(number.toLowerCase()));
+        if (unresolved.length) return NextResponse.json({ error: `Não encontrei estas anilhas de mãe no plantel: ${unresolved.join(", ")}. Confira os números ou cadastre as matrizes antes de importar.` , unresolvedMothers: unresolved }, { status: 422 });
+        const invalid = motherNumbers.filter((number) => { const bird = motherByRing.get(number.toLowerCase()); return bird.sex !== "femea" || (bird.species_id && bird.species_id !== speciesId); });
+        if (invalid.length) return NextResponse.json({ error: `Estas matrizes não estão cadastradas como fêmeas da espécie selecionada: ${invalid.join(", ")}.` }, { status: 422 });
+      }
+      const defaultMotherId = body.motherId || null;
+      const fatherId = body.fatherId || null;
+      const rows = items.map((item) => ({ user_id: user.id, ring_number: item.ring_number, species_id: speciesId, father_id: fatherId, mother_id: item.mother_ring_number ? motherByRing.get(item.mother_ring_number.toLowerCase())?.id : defaultMotherId, notes: String(body.notes || "Importado por foto em lote").slice(0, 1000), sex: "indeterminado", status: "disponivel" }));
+      const { data, error } = await supabase.from("ring_inventory").insert(rows).select("id,ring_number,mother_id");
       if (error) return NextResponse.json({ error: error.message?.includes("duplicate") ? "Um ou mais números já estão cadastrados." : "Não foi possível gravar o lote. Confira espécie e vínculos de pai/mãe." }, { status: 400 });
       return NextResponse.json({ success: true, imported: data?.length || clean.length, data: data || [] });
     }
@@ -50,7 +65,7 @@ export async function POST(request: Request) {
     if (countError) return NextResponse.json({ error: "Não foi possível validar o limite mensal de IA." }, { status: 500 });
     const limit = MONTHLY_LIMITS[plan] || 1000;
     if (!privileged && (count || 0) >= limit) return NextResponse.json({ error: `Você atingiu o limite mensal de ${limit} leituras por IA do seu plano.` }, { status: 429 });
-    const prompt = `Leia esta foto de uma lista/planilha de estoque de anilhas de aves. Extraia TODOS os números/códigos de anilha individuais, na ordem em que aparecem, sem inventar caracteres. Ignore quantidades, datas, preços, medidas, telefones e códigos que claramente não sejam números de anilha. Cada linha deve gerar apenas um código completo. Preserve letras, números, pontos, barras e hífens. Se um caractere estiver ilegível, NÃO adivinhe: omita aquele item e informe-o em uncertain. Remova duplicatas idênticas. Responda somente JSON: {"ring_numbers":["..."],"uncertain":["descrição curta da linha ilegível"],"notes":"observação geral"}. Não invente números. Se a imagem tiver várias colunas, leia todas de cima para baixo e da esquerda para a direita.`;
+    const prompt = `Leia esta foto de uma lista/planilha de estoque de anilhas de aves. Extraia TODOS os números/códigos de anilha individuais, na ordem em que aparecem, sem inventar caracteres. Ignore quantidades, datas, preços, medidas, telefones e códigos que claramente não sejam números de anilha. Cada linha deve gerar apenas um código completo. Preserve letras, números, pontos, barras e hífens. Se um caractere estiver ilegível, NÃO adivinhe: omita aquele item e informe-o em uncertain. Remova duplicatas idênticas. Responda somente JSON: {"items":[{"ring_number":"número da anilha do estoque","mother_ring_number":"número da anilha da mãe/matriz na mesma linha, ou string vazia"}],"uncertain":["descrição curta da linha ilegível"],"notes":"observação geral"}. Identifique a coluna de mãe/matriz quando existir e associe o número à anilha da mesma linha. Se não houver coluna de mãe, use string vazia. Não invente números. Se a imagem tiver várias colunas, leia todas de cima para baixo e da esquerda para a direita.`;
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -85,11 +100,14 @@ export async function POST(request: Request) {
     const result = await response.json().catch(() => ({}));
     if (!response.ok) return NextResponse.json({ error: "A leitura da foto falhou. Tente uma imagem mais nítida, reta e bem iluminada." }, { status: 502 });
     let parsed: any; try { parsed = JSON.parse(result?.choices?.[0]?.message?.content || "{}"); } catch { return NextResponse.json({ error: "A IA não conseguiu estruturar a lista. Tente novamente." }, { status: 502 }); }
-    const ringNumbers = Array.isArray(parsed.ring_numbers) ? [...new Set(parsed.ring_numbers.map((n: any) => String(n || "").trim()).filter((n: string) => n && n.length <= 120))].slice(0, 300) : [];
-    if (!ringNumbers.length) return NextResponse.json({ error: "Não encontrei números de anilha legíveis nesta foto. Tente aproximar e fotografar a lista inteira." }, { status: 422 });
+    const rawItems: any[] = Array.isArray(parsed.items) ? parsed.items : (Array.isArray(parsed.ring_numbers) ? parsed.ring_numbers.map((n: any) => ({ ring_number: n, mother_ring_number: "" })) : []);
+    const items: Array<{ ring_number: string; mother_ring_number: string }> = rawItems.map((item: any) => ({ ring_number: String(item?.ring_number || "").trim(), mother_ring_number: String(item?.mother_ring_number || "").trim() })).filter((item) => item.ring_number && item.ring_number.length <= 120).slice(0, 300);
+    const seen = new Set<string>();
+    const ringItems = items.filter((item) => { const key = item.ring_number.toLowerCase(); if (seen.has(key)) return false; seen.add(key); return true; });
+    if (!ringItems.length) return NextResponse.json({ error: "Não encontrei números de anilha legíveis nesta foto. Tente aproximar e fotografar a lista inteira." }, { status: 422 });
     const { error: usageError } = await supabase.from("ai_bird_scan_usage").insert({ user_id: user.id, usage_month: month });
     if (usageError) console.error("[Apollo AI] ring batch usage", usageError);
-    return NextResponse.json({ ringNumbers, uncertain: Array.isArray(parsed.uncertain) ? parsed.uncertain.slice(0, 30) : [], notes: typeof parsed.notes === "string" ? parsed.notes : "", usage: { used: (count || 0) + 1, limit } });
+    return NextResponse.json({ items: ringItems, ringNumbers: ringItems.map((item) => item.ring_number), uncertain: Array.isArray(parsed.uncertain) ? parsed.uncertain.slice(0, 30) : [], notes: typeof parsed.notes === "string" ? parsed.notes : "", usage: { used: (count || 0) + 1, limit } });
   } catch (error: any) {
     if (error?.message === "UNAUTHENTICATED") return NextResponse.json({ error: "Faça login novamente." }, { status: 401 });
     console.error("[Apollo AI] ring batch import", error);

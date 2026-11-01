@@ -257,3 +257,6 @@ O sistema impede o cadastro/reutilização de um número de anilha já utilizado
 - Adicionado `README_CADASTRO_VETERINARIO_KAIQUE.md` com a sequência de ativação.
 - Ajustado o cabeçalho da landing page em telas pequenas para empilhar a marca e os botões, sem sobreposição entre **Entrar** e **Criar conta**.
 - Não foi criada senha provisória; o veterinário define a própria senha no cadastro.
+
+
+Versão 0.5.72: importação de anilhas por foto reconhece coluna de anilha-mãe e vincula automaticamente à matriz cadastrada pelo número da anilha. Números de mãe não encontrados ou com sexo/espécie incompatíveis impedem a gravação para evitar vínculos incorretos.

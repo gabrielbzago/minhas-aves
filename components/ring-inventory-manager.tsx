@@ -16,8 +16,9 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
   const [applySex,setApplySex]=useState("indeterminado");
   const [query,setQuery]=useState("");
   const [sexDrafts,setSexDrafts]=useState<Record<string,string>>({});
+  const [motherDrafts,setMotherDrafts]=useState<Record<string,string>>({});
   const [batchImage,setBatchImage]=useState<File|null>(null);
-  const [batchRows,setBatchRows]=useState<string[]>([]);
+  const [batchRows,setBatchRows]=useState<Array<{ring_number:string;mother_ring_number:string}>>([]);
   const [batchUncertain,setBatchUncertain]=useState<string[]>([]);
   const [batchSpecies,setBatchSpecies]=useState("");
   const [batchFather,setBatchFather]=useState("");
@@ -79,6 +80,18 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
     else {setRows(rows.map(r=>r.id===applyRing?{...r,...data, status:"aplicada",applied_to_bird_id:applyBird,sex:applySex,applied_bird:birds.find(b=>b.id===applyBird)}:r));setApplyRing("");setApplyBird("");setApplySex("indeterminado");await load();}
     setBusy(false);
   }
+  async function saveMother(id:string){
+    const motherId=motherDrafts[id]||"";
+    setBusy(true);setError("");
+    try{
+      const response=await fetch("/api/rings",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,mother_id:motherId||null})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||"Não foi possível alterar a matriz.");
+      setMotherDrafts(current=>{const next={...current};delete next[id];return next;});
+      await load();
+    }catch(e:any){setError(e?.message||"Não foi possível alterar a matriz.");}
+    finally{setBusy(false);}
+  }
   async function saveSex(id:string){
     const sex=sexDrafts[id];
     if(!sex)return;
@@ -107,15 +120,15 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
       const optimized=canvas.toDataURL("image/jpeg",0.82);
       const response=await fetch("/api/rings/import-photo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({image:optimized,mimeType:"image/jpeg"})});
       const result=await response.json();if(!response.ok)throw new Error(result.error||"Falha ao ler a foto.");
-      setBatchRows(result.ringNumbers||[]);setBatchUncertain(result.uncertain||[]);setBatchNotes(result.notes||"");setBatchMessage(`${(result.ringNumbers||[]).length} número(s) identificados. Revise a lista antes de cadastrar.`);
+      setBatchRows(result.items|| (result.ringNumbers||[]).map((ring_number:string)=>({ring_number,mother_ring_number:""})));setBatchUncertain(result.uncertain||[]);setBatchNotes(result.notes||"");setBatchMessage(`${(result.ringNumbers||[]).length} número(s) identificados. Revise a lista antes de cadastrar.`);
     }catch(e:any){setBatchError(e?.message||"Não foi possível ler a foto.");}finally{setBatchBusy(false);}
   }
   async function importBatch(){
-    const numbers=batchRows.map(n=>n.trim()).filter(Boolean);
-    if(!batchSpecies||!numbers.length){setBatchError("Selecione a espécie e confira os números.");return;}
+    const items=batchRows.map(item=>({ring_number:item.ring_number.trim(),mother_ring_number:item.mother_ring_number.trim()})).filter(item=>item.ring_number);
+    if(!batchSpecies||!items.length){setBatchError("Selecione a espécie e confira os números.");return;}
     setBatchBusy(true);setBatchError("");setBatchMessage("");
     try{
-      const response=await fetch("/api/rings/import-photo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"import",ringNumbers:numbers,speciesId:batchSpecies,fatherId:batchFather||null,motherId:batchMother||null,notes:batchNotes})});
+      const response=await fetch("/api/rings/import-photo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"import",items,speciesId:batchSpecies,fatherId:batchFather||null,motherId:batchMother||null,notes:batchNotes})});
       const result=await response.json();if(!response.ok)throw new Error(result.error||"Não foi possível cadastrar o lote.");
       setBatchMessage(`${result.imported} anilha(s) cadastrada(s) com sucesso no estoque.`);setBatchRows([]);setBatchImage(null);setBatchUncertain([]);setBatchFather("");setBatchMother("");await load();
     }catch(e:any){setBatchError(e?.message||"Falha ao importar o lote.");}finally{setBatchBusy(false);}
@@ -158,7 +171,7 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
     </section>
     {error&&<div className="error" role="alert">{error}</div>}
     {canBatch&&<section className="form-card" style={{marginTop:16,border:"1px solid var(--border,#dce5df)"}}>
-      <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",flexWrap:"wrap"}}><div><h3 style={{marginBottom:4}}>Importar estoque por foto</h3><p style={{margin:0}}>Fotografe uma lista de anilhas. A IA identifica os números e prepara vários cadastros individuais de uma só vez.</p></div><span className="badge">Profissional e Lenda</span></div>
+      <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",flexWrap:"wrap"}}><div><h3 style={{marginBottom:4}}>Importar estoque por foto</h3><p style={{margin:0}}>Fotografe uma lista de anilhas. A IA identifica cada anilha e, quando houver coluna de mãe/matriz, tenta vincular pelo número de anilha já cadastrado no plantel.</p></div><span className="badge">Profissional e Lenda</span></div>
       <div className="form-grid" style={{marginTop:14}}>
         <div className="field full"><label>Foto da lista de anilhas</label><input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={e=>{setBatchImage(e.target.files?.[0]||null);setBatchRows([]);setBatchError("");setBatchMessage("");}}/><small>JPG, PNG ou WEBP. Prefira foto reta, com boa iluminação e toda a lista visível.</small></div>
         <div className="field"><label>Espécie do lote *</label><select value={batchSpecies} onChange={e=>setBatchSpecies(e.target.value)}><option value="">Selecione a espécie</option>{species.map((sp:any)=><option key={sp.id} value={sp.id}>{sp.common_name} · {sp.scientific_name}</option>)}</select></div>
@@ -168,7 +181,7 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
       <div className="form-actions"><button type="button" className="btn btn-primary" disabled={!batchImage||batchBusy} onClick={readBatchPhoto}>{batchBusy?"Lendo imagem...":"Ler lista com IA"}</button></div>
       {batchError&&<div className="error" role="alert" style={{marginTop:12}}>{batchError}</div>}{batchMessage&&<p role="status" style={{marginTop:12,color:"var(--success,#16834a)"}}>{batchMessage}</p>}
       {batchUncertain.length>0&&<div style={{marginTop:10,padding:12,borderRadius:10,background:"var(--surface-secondary,#f4f6f4)"}}><strong>Linhas que precisam de conferência</strong><ul>{batchUncertain.map((v,i)=><li key={i}>{v}</li>)}</ul></div>}
-      {batchRows.length>0&&<div style={{marginTop:14}}><div style={{display:"flex",justifyContent:"space-between",gap:8,flexWrap:"wrap",alignItems:"center"}}><strong>Revise os números identificados ({batchRows.length})</strong><small>Todos começam como disponíveis e sexo indefinido.</small></div><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:8,marginTop:10}}>{batchRows.map((n,i)=><div key={i} className="field"><label>Anilha {i+1}</label><input value={n} onChange={e=>setBatchRows(rows=>rows.map((v,j)=>j===i?e.target.value: v))}/></div>)}</div><div className="form-actions"><button type="button" className="btn btn-primary" disabled={batchBusy||!batchSpecies||!batchRows.some(n=>n.trim())} onClick={importBatch}>{batchBusy?"Cadastrando lote...":`Cadastrar ${batchRows.length} anilha(s)`}</button><button type="button" className="btn btn-secondary" disabled={batchBusy} onClick={()=>{setBatchRows([]);setBatchMessage("");}}>Descartar leitura</button></div></div>}
+      {batchRows.length>0&&<div style={{marginTop:14}}><div style={{display:"flex",justifyContent:"space-between",gap:8,flexWrap:"wrap",alignItems:"center"}}><strong>Revise os números identificados ({batchRows.length})</strong><small>Todos começam como disponíveis e sexo indefinido.</small></div><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:8,marginTop:10}}>{batchRows.map((item,i)=><div key={i} className="field" style={{border:"1px solid var(--border,#e5e7eb)",borderRadius:10,padding:10}}><label>Anilha do estoque {i+1}</label><input value={item.ring_number} onChange={e=>setBatchRows(rows=>rows.map((v,j)=>j===i?{...v,ring_number:e.target.value}:v))}/><label style={{marginTop:8}}>Anilha da mãe/matriz (opcional)</label><input value={item.mother_ring_number} placeholder="Número da anilha da mãe na lista" onChange={e=>setBatchRows(rows=>rows.map((v,j)=>j===i?{...v,mother_ring_number:e.target.value}:v))}/>{item.mother_ring_number&&<small style={{color:birds.some((b:any)=>String(b.ring_number||"").trim().toLowerCase()===item.mother_ring_number.trim().toLowerCase()&&b.sex==="femea")?"var(--success,#16834a)":"var(--muted,#64748b)"}}>{(()=>{const m=birds.find((b:any)=>String(b.ring_number||"").trim().toLowerCase()===item.mother_ring_number.trim().toLowerCase()&&b.sex==="femea");return m?`Matriz encontrada: ${m.name}`:"A matriz será conferida no plantel ao cadastrar"})()}</small>}</div>)}</div><div className="form-actions"><button type="button" className="btn btn-primary" disabled={batchBusy||!batchSpecies||!batchRows.some(item=>item.ring_number.trim())} onClick={importBatch}>{batchBusy?"Cadastrando lote...":`Cadastrar ${batchRows.length} anilha(s)`}</button><button type="button" className="btn btn-secondary" disabled={batchBusy} onClick={()=>{setBatchRows([]);setBatchMessage("");}}>Descartar leitura</button></div></div>}
     </section>}
     <div className="form-card" style={{marginTop:16}}>
       <h3>Cadastrar anilha no estoque</h3>
@@ -193,7 +206,7 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
     <div className="form-card" style={{marginTop:16}}>
       <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",flexWrap:"wrap"}}><h3>Estoque e histórico</h3><strong>{available.length} disponível(is)</strong></div>
       <div className="form-grid"><div className="field"><label>Buscar</label><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Número, espécie ou observação"/></div><div className="field"><label>Exibir</label><select value={filter} onChange={e=>setFilter(e.target.value)}><option value="todos">Todas</option><option value="disponivel">Disponíveis</option><option value="aplicada">Aplicadas</option><option value="cancelada">Canceladas</option></select></div></div>
-      {loading?<div className="empty">Carregando estoque...</div>:filtered.length===0?<div className="empty">Nenhuma anilha encontrada.</div>:<div className="record-list">{filtered.map(r=><article className="record" key={r.id}><div style={{flex:1}}><strong>{r.ring_number}</strong><small>{r.species?.common_name||"Espécie não informada"} · {r.status==="disponivel"?"Disponível":r.status==="aplicada"?"Aplicada":"Cancelada"}{r.applied_bird?.name?` · ${r.applied_bird.name}`:""}</small><p>{r.father?.name?`Pai: ${r.father.name} `:""}{r.mother?.name?`Mãe: ${r.mother.name} `:""}{r.notes||""}</p><div style={{display:"flex",alignItems:"end",gap:8,flexWrap:"wrap",marginTop:10}}><div className="field" style={{maxWidth:220,flex:1}}><label>Sexo do filhote</label><select value={sexDrafts[r.id]??(r.sex||"indeterminado")} disabled={busy} onChange={e=>setSexDrafts(current=>({...current,[r.id]:e.target.value}))}><option value="indeterminado">Indefinido</option><option value="macho">Macho</option><option value="femea">Fêmea</option></select></div><button type="button" className="btn btn-primary" disabled={busy||!sexDrafts[r.id]||sexDrafts[r.id]===(r.sex||"indeterminado")} onClick={()=>saveSex(r.id)}>{busy?"Salvando...":"Salvar sexo"}</button></div></div>{r.status==="disponivel"&&<button className="btn btn-danger" onClick={()=>remove(r.id)}>Excluir</button>}</article>)}</div>}
+      {loading?<div className="empty">Carregando estoque...</div>:filtered.length===0?<div className="empty">Nenhuma anilha encontrada.</div>:<div className="record-list">{filtered.map(r=><article className="record" key={r.id}><div style={{flex:1}}><strong>{r.ring_number}</strong><small>{r.species?.common_name||"Espécie não informada"} · {r.status==="disponivel"?"Disponível":r.status==="aplicada"?"Aplicada":"Cancelada"}{r.applied_bird?.name?` · ${r.applied_bird.name}`:""}</small><p>{r.father?.name?`Pai: ${r.father.name} `:""}{r.mother?.name?`Mãe: ${r.mother.name} `:""}{r.notes||""}</p><div style={{display:"flex",alignItems:"end",gap:8,flexWrap:"wrap",marginTop:10}}><div className="field" style={{maxWidth:220,flex:1}}><label>Sexo do filhote</label><select value={sexDrafts[r.id]??(r.sex||"indeterminado")} disabled={busy} onChange={e=>setSexDrafts(current=>({...current,[r.id]:e.target.value}))}><option value="indeterminado">Indefinido</option><option value="macho">Macho</option><option value="femea">Fêmea</option></select></div><button type="button" className="btn btn-primary" disabled={busy||!sexDrafts[r.id]||sexDrafts[r.id]===(r.sex||"indeterminado")} onClick={()=>saveSex(r.id)}>{busy?"Salvando...":"Salvar sexo"}</button></div><div style={{display:"flex",alignItems:"end",gap:8,flexWrap:"wrap",marginTop:10}}><div className="field" style={{maxWidth:340,flex:1}}><label>Mãe/matriz vinculada</label><select value={motherDrafts[r.id]??(r.mother_id||"")} disabled={busy} onChange={e=>setMotherDrafts(current=>({...current,[r.id]:e.target.value}))}><option value="">Não vinculada</option>{birds.filter((b:any)=>b.sex==="femea"&&(!r.species_id||b.species_id===r.species_id)).map((b:any)=><option key={b.id} value={b.id}>{b.name} · {b.ring_number||"sem anilha"}</option>)}</select></div><button type="button" className="btn btn-soft" disabled={busy||(motherDrafts[r.id]??(r.mother_id||""))===(r.mother_id||"")} onClick={()=>saveMother(r.id)}>{busy?"Salvando...":"Salvar matriz"}</button></div></div>{r.status==="disponivel"&&<button className="btn btn-danger" onClick={()=>remove(r.id)}>Excluir</button>}</article>)}</div>}
     </div>
   </div>;
 }

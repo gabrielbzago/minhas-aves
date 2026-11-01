@@ -162,3 +162,35 @@ export async function PATCH(request: Request) {
   }
   return NextResponse.json({ data, error: null });
 }
+
+
+export async function DELETE(request: Request) {
+  const { supabase, user } = await requireUser();
+  const body = await request.json().catch(() => ({}));
+  const id = String(body?.id || "").trim();
+  if (!id) return NextResponse.json({ error: "Selecione uma ave para excluir." }, { status: 400 });
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+  const ownerEmail = (process.env.OWNER_EMAIL || "gabrielbzago@gmail.com").trim().toLowerCase();
+  const isOwner = profile?.role === "owner" || (user.email || "").trim().toLowerCase() === ownerEmail;
+  if (!isOwner) return NextResponse.json({ error: "Esta ação é exclusiva do Owner." }, { status: 403 });
+  const { data: bird, error: lookupError } = await supabase.from("birds").select("id,name,is_genealogy_reference").eq("id", id).eq("user_id", user.id).maybeSingle();
+  if (lookupError || !bird) return NextResponse.json({ error: "Ave não encontrada no seu próprio plantel." }, { status: 404 });
+  // Antes da exclusão, remove apenas referências genealógicas/operacionais dentro da própria conta.
+  // Não apaga consultas, documentos ou registros de outras contas.
+  const [childrenUpdate, ringParentUpdate, ringAppliedUpdate] = await Promise.all([
+    supabase.from("birds").update({ father_id: null, mother_id: null }).eq("user_id", user.id).or(`father_id.eq.${id},mother_id.eq.${id}`),
+    supabase.from("ring_inventory").update({ father_id: null, mother_id: null }).eq("user_id", user.id).or(`father_id.eq.${id},mother_id.eq.${id}`),
+    supabase.from("ring_inventory").update({ applied_to_bird_id: null }).eq("user_id", user.id).eq("applied_to_bird_id", id),
+  ]);
+  const cleanupError = childrenUpdate.error || ringParentUpdate.error || ringAppliedUpdate.error;
+  if (cleanupError) {
+    console.error("[Apollo Owner] cleanup before bird deletion", cleanupError);
+    return NextResponse.json({ error: "Não foi possível preparar os vínculos desta ave para exclusão. Nenhuma ave foi apagada; confira as dependências e tente novamente." }, { status: 409 });
+  }
+  const { error } = await supabase.from("birds").delete().eq("id", id).eq("user_id", user.id);
+  if (error) {
+    console.error("[Apollo Owner] DELETE /api/birds", error);
+    return NextResponse.json({ error: friendlySupabaseError(error, "Não foi possível excluir esta ave. Existem registros vinculados que o banco precisa preservar.") }, { status: 409 });
+  }
+  return NextResponse.json({ success: true, deletedId: id, name: bird.name });
+}
