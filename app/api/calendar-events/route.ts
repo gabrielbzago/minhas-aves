@@ -39,7 +39,7 @@ export async function GET() {
   try {
     const { supabase, user } = await requireUser();
     const { data, error } = await supabase.from("calendar_events")
-      .select("*, bird:birds!calendar_events_bird_id_fkey(id,name,sex,ring_number,species:species(common_name)), partner_bird:birds!calendar_events_partner_bird_id_fkey(id,name,sex,ring_number)")
+      .select("*, bird:birds!calendar_events_bird_id_fkey(id,name,sex,ring_number,species_id,species:species(common_name)), partner_bird:birds!calendar_events_partner_bird_id_fkey(id,name,sex,ring_number)")
       .eq("user_id", user.id).order("event_date", { ascending: true });
     if (error) throw error;
     return NextResponse.json({ data: data || [] });

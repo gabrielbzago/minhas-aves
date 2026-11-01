@@ -9,6 +9,7 @@ import VetBookingForm from "@/components/vet-booking-form";
 import { CARD_COLORS, DEFAULT_CARD_COLOR, type CardColorKey } from "@/lib/card-colors";
 import RingInventoryManager from "@/components/ring-inventory-manager";
 import SexagemManager from "@/components/sexagem-manager";
+import ReproductionManager from "@/components/reproduction-manager";
 
 const FIELD_MAP: Record<string, {label:string; key:string; type?:string; placeholder?:string}[]> = {
   "galeria-fotos":[{label:"Título da foto",key:"title"},{label:"Descrição",key:"description",type:"textarea"}],
@@ -41,6 +42,7 @@ export default function ModuleManager({module,birds,initialRecords,canImport,vet
  const fields=FIELD_MAP[module]||[{label:"Título",key:"title"},{label:"Observações",key:"notes",type:"textarea"}];
  if(String(module).trim().toLowerCase()==="gestao-anilhas") return <RingInventoryManager birds={birds||[]} species={species||[]}/>;
  if(String(module).trim().toLowerCase()==="sexagem") return <SexagemManager birds={birds||[]}/>;
+ if(String(module).trim().toLowerCase()==="reproducao") return <ReproductionManager birds={birds||[]}/>;
  const set=(k:string,v:string)=>setData(x=>({...x,[k]:v}));
  async function save(e:any){
   e.preventDefault(); setBusy(true); setError(""); const c=createClient();
