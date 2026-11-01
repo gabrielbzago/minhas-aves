@@ -1,0 +1,19 @@
+APOLLO 0.5.63 — CENTRAL DE AJUDA, SUPORTE E FEEDBACK
+
+1. Atualize o projeto com o conteúdo deste pacote.
+2. No Supabase > SQL Editor, execute migration_feedback_suporte_apollo_0_5_63.sql.
+3. Faça o deploy na Vercel.
+4. Entre com uma conta e abra o botão flutuante “Ajuda e suporte”.
+5. Teste o FAQ, WhatsApp, e-mail e envio de avaliação.
+
+CONTATOS CONFIGURADOS
+E-mail: gabrielbzago@gmail.com
+WhatsApp/telefone: +55 19 99203-6896
+
+PRIORIDADE EXIBIDA
+Free: atendimento padrão
+Criatório Amador: atendimento prioritário
+Criatório Profissional: suporte prioritário
+Criador Lenda: suporte VIP prioritário
+
+Atenção: a migração SQL é obrigatória para salvar avaliações e sugestões. A prioridade fica gravada para triagem, mas não existe SLA automático nem central de tickets nesta versão.
