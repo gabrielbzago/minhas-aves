@@ -1,4 +1,4 @@
-# Apollo 0.5.70 — Correção do build da importação de anilhas
+# Apollo 0.5.71 — Correção do build da importação de anilhas
 
 Corrigida a estrutura de fechamento do objeto `JSON.stringify` na chamada à API OpenAI em `app/api/rings/import-photo/route.ts`. O payload foi reformatado em múltiplas linhas para deixar explícitos os arrays `messages` e `content`.
 

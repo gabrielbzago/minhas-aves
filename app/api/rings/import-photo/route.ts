@@ -21,7 +21,7 @@ export async function POST(request: Request) {
       const numbers = Array.isArray(body.ringNumbers) ? body.ringNumbers : [];
       const speciesId = String(body.speciesId || "");
       if (!speciesId || !numbers.length || numbers.length > 300) return NextResponse.json({ error: "Informe a espécie e uma lista válida de até 300 anilhas." }, { status: 400 });
-      const clean = [...new Set(numbers.map((n: any) => String(n || "").trim()).filter(Boolean))];
+      const clean: string[] = Array.from(new Set<string>((numbers as unknown[]).map((n: unknown) => String(n ?? "").trim()).filter((n: string) => n.length > 0)));
       if (!clean.length) return NextResponse.json({ error: "Nenhum número válido foi informado." }, { status: 400 });
       if (clean.length !== numbers.length) return NextResponse.json({ error: "A lista contém números vazios ou repetidos. Revise antes de importar." }, { status: 400 });
       const { data: existing, error: existingError } = await supabase.from("ring_inventory").select("ring_number").eq("user_id", user.id).in("ring_number", clean);
