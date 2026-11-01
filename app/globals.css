@@ -920,3 +920,41 @@ body{background:var(--bg);color:var(--text)}
 @media(max-width:900px){.dashboard-lower-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:700px){.dashboard-lower-grid{grid-template-columns:1fr;gap:12px;margin-bottom:12px}.dashboard-panel{padding:17px;border-radius:18px}.dashboard-panel-head h2{font-size:17px}.dashboard-activity{padding:10px}.dashboard-activity-tag,.dashboard-activity-date{font-size:9px;padding:5px 7px}.dashboard-repro-stats>div{padding:11px}.dashboard-repro-stats strong{font-size:22px}.dashboard-secondary-grid .dashboard-panel{min-height:unset}}
 @media(max-width:380px){.dashboard-activity{gap:8px}.dashboard-activity-icon{width:31px;height:31px}.dashboard-activity-tag{display:none}.dashboard-mini-metrics{grid-template-columns:1fr}.dashboard-species-row{grid-template-columns:minmax(80px,1fr) minmax(50px,1fr) 20px}}
+
+
+/* Dashboard: distribuição por espécie */
+.dashboard-species-card{display:none;background:#fff;border:1px solid var(--line);border-radius:22px;padding:24px;box-shadow:0 10px 32px rgba(24,48,74,.045);margin:0 0 20px;min-width:0}
+.species-overview{display:flex;align-items:center;justify-content:center;gap:clamp(24px,5vw,64px);padding:22px 8px 18px}
+.species-donut-wrap{width:176px;height:176px;flex:0 0 176px;display:grid;place-items:center}
+.species-donut{width:100%;height:100%;border-radius:50%;display:grid;place-items:center;position:relative;filter:drop-shadow(0 7px 12px rgba(28,47,66,.10))}
+.species-donut:before{content:"";position:absolute;inset:0;border-radius:50%;mask:radial-gradient(circle,transparent 0 57%,#000 58%)}
+.species-donut-hole{width:68%;height:68%;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px #edf0f3}
+.species-donut-hole strong{font-size:32px;line-height:1;letter-spacing:-.05em;color:var(--text)}
+.species-donut-hole span{font-size:10px;color:var(--muted);margin-top:5px}
+.species-legend{display:grid;gap:12px;min-width:170px;flex:1;max-width:440px;max-height:260px;overflow:auto}
+.species-legend-item{display:grid;grid-template-columns:10px 1fr auto;align-items:center;gap:10px;min-width:0}
+.species-dot{width:10px;height:10px;border-radius:50%}
+.species-legend-item>div{display:grid;gap:2px;min-width:0}
+.species-legend-item strong{font-size:13px;color:var(--text);overflow-wrap:anywhere}
+.species-legend-item small{font-size:10px;color:var(--muted)}
+.species-legend-item>b{font-size:14px;color:var(--text);white-space:nowrap}
+@media(max-width:700px){
+ .content:has(>.dashboard-insights){display:flex;flex-direction:column}
+ .content:has(>.dashboard-insights)>.page-title{order:0}
+ .content:has(>.dashboard-insights)>.dashboard-insights{order:1;display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
+ .content:has(>.dashboard-insights)>.dashboard-species-card{display:block;order:2;margin-bottom:12px;padding:18px}
+ .content:has(>.dashboard-insights)>.dashboard-lower-grid{order:3;display:grid;grid-template-columns:1fr;margin-bottom:12px}
+ .content:has(>.dashboard-insights)>.dashboard-secondary-grid{order:4}
+ .content:has(>.dashboard-insights)>.member-note{order:5}
+ .content:has(>.dashboard-insights)>.grid3{order:6}
+ .content:has(>.dashboard-insights)>.stat-grid{order:99;margin-top:12px;margin-bottom:0}
+ .dashboard-sex-card,.dashboard-quick-card{padding:18px}
+ .sex-overview,.species-overview{gap:16px;padding:18px 0 14px;flex-direction:column}
+ .sex-donut-wrap,.species-donut-wrap{width:156px;height:156px;flex-basis:156px}
+ .sex-legend,.species-legend{width:100%;max-width:none;min-width:0;gap:10px}
+ .species-legend{max-height:300px}
+ .species-legend-item strong{font-size:12px}
+ .dashboard-section-heading h2{font-size:18px}
+ .dashboard-total-pill{font-size:10px}
+ .sex-insight-footer{flex-wrap:wrap;gap:10px}
+}

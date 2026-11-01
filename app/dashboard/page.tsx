@@ -37,7 +37,11 @@ export default async function DashboardPage({searchParams}:{searchParams?:Promis
  const eggs=events.filter((e:any)=>e.event_type==="postura").reduce((n:number,e:any)=>n+Number(e.egg_count||0),0);
  const ringAvailable=(ringRows||[]).filter((r:any)=>r.status==="disponivel").length;
  const speciesCounts=new Map<string,number>();birds.forEach((b:any)=>{const name=b.species?.common_name||"Espécie não informada";speciesCounts.set(name,(speciesCounts.get(name)||0)+1);});
- const speciesSummary=[...speciesCounts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
+ const speciesSummary=[...speciesCounts.entries()].sort((a,b)=>b[1]-a[1]);
+ const speciesPalette=["#35a879","#6da8ee","#ec8eb5","#f0ad4e","#8b7bd8","#39b7bd","#e8795b","#91b85b","#bd83c8","#6f91a8","#d18b45","#7d9c88"];
+ const speciesColors=speciesSummary.map((entry,index)=>speciesPalette[index%speciesPalette.length]);
+ let speciesCursor=0;
+ const speciesGradient=speciesSummary.length?`conic-gradient(${speciesSummary.map(([name,count],index)=>{const start=speciesCursor;speciesCursor+=birdCount?count/birdCount*360:0;return `${speciesColors[index]} ${start}deg ${speciesCursor}deg`;}).join(",")})`:"conic-gradient(#e8edf2 0deg 360deg)";
  const reproductiveBirths=events.filter((e:any)=>e.event_type==="nascimento").length;
  const reproductivePosturas=events.filter((e:any)=>e.event_type==="postura").length;
  const completedConsults=(vetRows||[]).filter((v:any)=>v.status==="completed").length;
@@ -71,6 +75,14 @@ export default async function DashboardPage({searchParams}:{searchParams?:Promis
    <div className="sex-insight-footer"><span>♀ <b>{femaleCount}</b> fêmeas</span><span>♂ <b>{maleCount}</b> machos</span><Link href="/dashboard/plantel">Ver plantel →</Link></div>
   </div>
   <div className="dashboard-quick-card"><span className="dashboard-eyebrow">ACOMPANHAMENTO</span><h2>Seu criatório, em foco.</h2><p>Tenha os principais números sempre à mão e mantenha seus registros organizados.</p><div className="quick-metric"><span className="quick-metric-icon">🐦</span><div><strong>{activeCount} de {birdCount}</strong><small>aves estão ativas</small></div></div><div className="quick-progress"><span style={{width:`${birdCount?activeCount/birdCount*100:0}%`}} /></div><Link className="btn btn-soft" href="/dashboard/plantel">Gerenciar meu plantel</Link></div>
+ </section>
+ <section className="dashboard-species-card">
+  <div className="dashboard-section-heading"><div><span className="dashboard-eyebrow">COMPOSIÇÃO DO PLANTEL</span><h2>Distribuição por espécie</h2><p>Veja quantas aves você possui de cada espécie, sem distinção de sexo.</p></div><span className="dashboard-total-pill">{speciesSummary.length} {speciesSummary.length===1?"espécie":"espécies"}</span></div>
+  {speciesSummary.length?<div className="species-overview">
+   <div className="species-donut-wrap"><div className="species-donut" style={{background:speciesGradient}}><div className="species-donut-hole"><strong>{birdCount}</strong><span>aves no plantel</span></div></div></div>
+   <div className="species-legend">{speciesSummary.map(([name,count],index)=><div className="species-legend-item" key={name}><span className="species-dot" style={{background:speciesColors[index]}}/><div><strong>{name}</strong><small>{count} {count===1?"ave":"aves"}</small></div><b>{birdCount?Math.round(count/birdCount*100):0}%</b></div>)}</div>
+  </div>:<p className="sex-empty">Cadastre aves com espécies definidas para visualizar esta distribuição.</p>}
+  <div className="sex-insight-footer"><span><b>{speciesSummary.length}</b> {speciesSummary.length===1?"espécie cadastrada":"espécies cadastradas"}</span><Link href="/dashboard/plantel">Ver plantel →</Link></div>
  </section>
  <section className="dashboard-lower-grid">
   <div className="dashboard-panel dashboard-today"><div className="dashboard-panel-head"><div><span className="dashboard-eyebrow">ROTINA DO CRIATÓRIO</span><h2><Sparkles size={18}/> Hoje no seu criatório</h2><p>Alertas inteligentes e próximos compromissos.</p></div><Link href="/dashboard/calendario">Abrir calendário <ArrowUpRight size={14}/></Link></div>
