@@ -1,0 +1,7 @@
+APOLLO 0.5.64 - CORRECAO DE BUILD
+
+Esta versao corrige uma aspa ausente na propriedade boxShadow do componente components/apollo-support-widget.tsx, que causava o erro Unterminated string constant no build da Vercel.
+
+Mantem as funcionalidades e a migracao SQL da versao 0.5.63. Nao execute novamente a migracao se ela ja foi aplicada com sucesso.
+
+A instalacao de dependencias e o build nao puderam ser concluidos neste ambiente por timeout durante npm ci. Valide npm run build apos instalar as dependencias.
