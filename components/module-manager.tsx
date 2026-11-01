@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import VetBookingForm from "@/components/vet-booking-form";
 import { CARD_COLORS, DEFAULT_CARD_COLOR, type CardColorKey } from "@/lib/card-colors";
 import RingInventoryManager from "@/components/ring-inventory-manager";
+import SexagemManager from "@/components/sexagem-manager";
 
 const FIELD_MAP: Record<string, {label:string; key:string; type?:string; placeholder?:string}[]> = {
   "galeria-fotos":[{label:"Título da foto",key:"title"},{label:"Descrição",key:"description",type:"textarea"}],
@@ -39,6 +40,7 @@ export default function ModuleManager({module,birds,initialRecords,canImport,vet
  const router=useRouter(); const [cardColor,setCardColor]=useState<CardColorKey>(DEFAULT_CARD_COLOR); const [records,setRecords]=useState<any[]>(initialRecords||[]); const [birdId,setBirdId]=useState(""); const [title,setTitle]=useState(""); const [data,setData]=useState<Record<string,string>>({}); const [busy,setBusy]=useState(false); const [error,setError]=useState(""); const [file,setFile]=useState<File|null>(null);
  const fields=FIELD_MAP[module]||[{label:"Título",key:"title"},{label:"Observações",key:"notes",type:"textarea"}];
  if(String(module).trim().toLowerCase()==="gestao-anilhas") return <RingInventoryManager birds={birds||[]} species={species||[]}/>;
+ if(String(module).trim().toLowerCase()==="sexagem") return <SexagemManager birds={birds||[]}/>;
  const set=(k:string,v:string)=>setData(x=>({...x,[k]:v}));
  async function save(e:any){
   e.preventDefault(); setBusy(true); setError(""); const c=createClient();
