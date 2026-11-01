@@ -1,0 +1,9 @@
+APOLLO 0.5.62 — CAMADA DE CONVERSÃO
+
+1. Substitua o projeto pelo conteúdo deste pacote e faça o deploy na Vercel.
+2. Não execute SQL: esta versão não exige migration.
+3. Não adicione variáveis novas.
+4. Confira no painel Free o aviso de upgrade, a página Recursos, os módulos bloqueados e o limite de IA.
+5. Confira também os planos pagos para garantir que os recursos contratados continuam liberados.
+
+Atenção: valide npm run build no ambiente de desenvolvimento/CI antes de publicar em produção.

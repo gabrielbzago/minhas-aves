@@ -1,0 +1,9 @@
+APOLLO 0.5.61 — FREE ESTRATÉGICO PARA IA
+
+O plano Grátis agora permite experimentar 1 análise de plaquinha por mês, com apenas uma foto da frente. A segunda análise apresenta convite para upgrade. Foto do verso e genealogia por foto permanecem nos planos Profissional e Lenda.
+
+Profissional: 30 análises/mês. Lenda: 100 análises/mês.
+
+Cadastro manual e demais recursos essenciais do Free foram preservados. Nenhuma migration SQL ou variável de ambiente nova.
+
+Atualize o projeto com este pacote e faça o deploy na Vercel.

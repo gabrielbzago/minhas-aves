@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { Home, Bird, Layers3, CreditCard, Settings, Stethoscope, LockKeyhole, CalendarDays, X, Menu, LogOut } from "lucide-react";
 import { FEATURES } from "@/lib/features";
-import { hasFeature, normalizePlan, planLabel, hasFeatureAccess } from "@/lib/plans";
+import { normalizePlan, planLabel, hasFeatureAccess } from "@/lib/plans";
 
 const moduleIcon: Record<string,string>={"importacao-anilha":"↥","gestao-anilhas":"◉","gestao-ave":"🐦","galeria-fotos":"▧","gestao-documentos":"▤","gestao-gaiola":"⌂","historico-ave":"◷",comportamento:"◌",genealogia:"⌘",painel:"▦","cartao-gaiola":"▣","imprimir-ficha":"▤","imprimir-plantel":"☷",reproducao:"♧",doencas:"✚",medicamentos:"✚",genotipagem:"◇",sexagem:"⚥","agendar-veterinario":"♧","consulta-veterinaria-inclusa":"★","modulo-veterinario":"🩺"};
 
@@ -42,7 +42,7 @@ export default function MobileDashboardMenu({plan,isVeterinarian=false,amadorTri
         {FEATURES.map(f=>{
           const unlocked=hasFeatureAccess(normalized,f.code,{role:isVeterinarian?"veterinarian":"creator",eligible:amadorTrialActive,startedAt:amadorTrialActive?new Date(Date.now()-1000).toISOString():null,endsAt:amadorTrialActive?new Date(Date.now()+86400000).toISOString():null});
           return <Link href={`/dashboard/recursos?modulo=${f.code}`} key={f.code} onClick={()=>setOpen(false)} className={unlocked?"":"mobile-locked"}>
-            <span className="mobile-module-icon">{moduleIcon[f.code]||"•"}</span><span>{f.title}</span>{!unlocked&&<LockKeyhole size={13}/>}<small>{unlocked?"Disponível":(f.tier==="amador"?"Amador":f.tier==="profissional"?"Profissional":f.tier==="lenda"?"Lenda":"Grátis")}</small>
+            <span className="mobile-module-icon">{moduleIcon[f.code]||"•"}</span><span>{f.title}</span>{!unlocked&&<LockKeyhole size={13}/>}<small>{unlocked?"Disponível":`Desbloquear · ${f.tier==="amador"?"Amador":f.tier==="profissional"?"Profissional":f.tier==="lenda"?"Lenda":"Grátis"}`}</small>
           </Link>
         })}
       </nav>

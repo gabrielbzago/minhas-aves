@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CONVERSION_COPY } from "@/lib/conversion";
 
-export default function BirdForm({ species, birds, initialBird, canUseAi = false }: { species: any[]; birds: any[]; initialBird?: any; canUseAi?: boolean }) {
+export default function BirdForm({ species, birds, initialBird, canUseAi = false, isFreePlan = false }: { species: any[]; birds: any[]; initialBird?: any; canUseAi?: boolean; isFreePlan?: boolean }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -10,7 +11,12 @@ export default function BirdForm({ species, birds, initialBird, canUseAi = false
   const [aiScanning, setAiScanning] = useState(false);
   const [aiScanError, setAiScanError] = useState("");
   const [aiScanInfo, setAiScanInfo] = useState("");
+  const [aiUsage, setAiUsage] = useState<{used:number;limit:number} | null>(null);
+  const [showAiUpgrade, setShowAiUpgrade] = useState(false);
   const [aiFileInputKey, setAiFileInputKey] = useState(0);
+  const [frontLabelPhoto, setFrontLabelPhoto] = useState<File | null>(null);
+  const [backLabelPhoto, setBackLabelPhoto] = useState<File | null>(null);
+  const [backFileInputKey, setBackFileInputKey] = useState(0);
   const [aiGenealogyScanning, setAiGenealogyScanning] = useState(false);
   const [aiGenealogyError, setAiGenealogyError] = useState("");
   const [aiGenealogyInfo, setAiGenealogyInfo] = useState("");
@@ -35,34 +41,40 @@ export default function BirdForm({ species, birds, initialBird, canUseAi = false
 
   useEffect(() => { if (!initialBird) fetch("/api/rings?status=disponivel").then(r=>r.ok?r.json():{data:[]}).then(x=>setStockRings(x.data||[])).catch(()=>setStockRings([])); }, [initialBird]);
 
-  async function scanBirdLabel(file?: File) {
+  async function prepareLabelPhoto(file: File) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new Error("Use imagens JPG, PNG ou WEBP.");
+    if (file.size > 8 * 1024 * 1024) throw new Error("Cada foto deve ter no máximo 8 MB.");
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 1800 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) { bitmap.close(); throw new Error("Não foi possível preparar a imagem."); }
+    context.fillStyle = "#ffffff"; context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close();
+    const compressed = await new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Falha ao otimizar a imagem.")), "image/jpeg", 0.84));
+    if (compressed.size > 3 * 1024 * 1024) throw new Error("Uma das fotos continua muito pesada. Tente uma imagem com menor resolução.");
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Não foi possível ler a imagem."));
+      reader.onerror = () => reject(new Error("Falha ao abrir a imagem."));
+      reader.readAsDataURL(compressed);
+    });
+  }
+
+  async function scanBirdLabel() {
     setAiScanError(""); setAiScanInfo("");
-    if (!file) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { setAiScanError("Use uma imagem JPG, PNG ou WEBP."); return; }
-    if (file.size > 8 * 1024 * 1024) { setAiScanError("A imagem deve ter no máximo 8 MB."); return; }
+    const selectedPhotos = [frontLabelPhoto, ...(isFreePlan ? [] : [backLabelPhoto])].filter(Boolean) as File[];
+    if (!selectedPhotos.length) { setAiScanError("Fotografe ou selecione pelo menos a frente da plaquinha."); return; }
     setAiScanning(true);
     try {
-      const bitmap = await createImageBitmap(file);
-      const scale = Math.min(1, 1800 / Math.max(bitmap.width, bitmap.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-      const context = canvas.getContext("2d");
-      if (!context) { bitmap.close(); throw new Error("Não foi possível preparar a imagem."); }
-      context.fillStyle = "#ffffff"; context.fillRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close();
-      const compressed = await new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Falha ao otimizar a imagem.")), "image/jpeg", 0.84));
-      if (compressed.size > 3 * 1024 * 1024) throw new Error("A imagem continua muito pesada. Tente uma foto com menor resolução.");
-      const image = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Não foi possível ler a imagem."));
-        reader.onerror = () => reject(new Error("Falha ao abrir a imagem."));
-        reader.readAsDataURL(compressed);
-      });
-      const response = await fetch("/api/ai/parse-bird-label", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image, mimeType: "image/jpeg" }) });
+      const images = await Promise.all(selectedPhotos.map(async file => ({ image: await prepareLabelPhoto(file), mimeType: "image/jpeg" })));
+      const response = await fetch("/api/ai/parse-bird-label", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ images }) });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Não foi possível analisar a plaquinha.");
       const data = result.data || {};
+      if (result.usage) setAiUsage(result.usage);
       setF((current: any) => ({
         ...current,
         name: data.name || current.name,
@@ -78,13 +90,15 @@ export default function BirdForm({ species, birds, initialBird, canUseAi = false
         genetics: data.genetics && Object.keys(data.genetics).length ? Object.entries(data.genetics).map(([a,b])=>`${a}:${b}`).join(",") : current.genetics,
       }));
       const found = [data.name, data.species_id && "espécie", data.birth_date && "nascimento", data.ring_number && "anilha", data.sex && data.sex !== "indeterminado" && "sexo"].filter(Boolean).length;
-      setAiScanInfo(`Leitura concluída: ${found} informações identificadas. Confira todos os campos antes de salvar.${result.usage ? ` Uso mensal: ${result.usage.used}/${result.usage.limit}.` : ""}`);
+      setAiScanInfo(`Leitura concluída com ${selectedPhotos.length} ${selectedPhotos.length === 1 ? "foto" : "fotos"}: ${found} informações identificadas. Confira todos os campos antes de salvar.${result.usage ? ` Uso mensal: ${result.usage.used}/${result.usage.limit}.` : ""}`);
     } catch (error: any) {
-      setAiScanError(error?.message || "Não foi possível analisar a imagem.");
-    } finally { setAiScanning(false); setAiFileInputKey((x: number) => x + 1); }
+      const message = error?.message || "Não foi possível analisar a imagem.";
+      setAiScanError(message);
+      if (/upgrade|análise gratuita|limite|plano Grátis|genealogia por foto|frente e verso/i.test(message)) setShowAiUpgrade(true);
+    } finally { setAiScanning(false); }
   }
 
-  async function scanGenealogyPhoto(file?: File) {
+    async function scanGenealogyPhoto(file?: File) {
     setAiGenealogyError(""); setAiGenealogyInfo("");
     if (!file) return;
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { setAiGenealogyError("Use uma imagem JPG, PNG ou WEBP."); return; }
@@ -112,6 +126,7 @@ export default function BirdForm({ species, birds, initialBird, canUseAi = false
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Não foi possível analisar a genealogia.");
       const data = result.data || {};
+      if (result.usage) setAiUsage(result.usage);
       setF((current: any) => ({ ...current, father_id: data.father_id || "", mother_id: data.mother_id || "" }));
       const describe = (label: string, item: any) => {
         if (item?.status === "vinculado") return `${label}: ${item.name} vinculado`;
@@ -233,17 +248,25 @@ export default function BirdForm({ species, birds, initialBird, canUseAi = false
     {error && <div className="error" role="alert">{error}</div>}
     {!initialBird && (canUseAi ? <section style={{border:"1px solid var(--line)",borderRadius:14,padding:16,marginBottom:18,background:"linear-gradient(135deg,#f3fbf7,#fff)"}}>
       <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",flexWrap:"wrap"}}>
-        <div><strong style={{display:"block",fontSize:15}}>✨ Cadastro Inteligente por Foto</strong><small style={{color:"var(--muted)"}}>Fotografe a plaquinha para preencher os dados da ave ou reconhecer os pais na genealogia.</small></div>
+        <div><strong style={{display:"block",fontSize:15}}>✨ Cadastro Inteligente por Foto</strong><small style={{color:"var(--muted)"}}>{isFreePlan ? "Experimente a leitura automática da plaquinha com uma foto gratuita por mês." : "Fotografe a frente e, se necessário, o verso da plaquinha. A IA combina as duas fotos antes de preencher os dados."}</small></div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-          <label className="btn btn-soft" style={{cursor:aiScanning?"wait":"pointer",margin:0,opacity:aiScanning ? 0.65 : 1}}>{aiScanning?"Analisando...":"📷 Dados da ave"}<input key={aiFileInputKey} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={aiScanning || aiGenealogyScanning} onChange={e=>void scanBirdLabel(e.target.files?.[0])} style={{display:"none"}}/></label>
-          <label className="btn btn-soft" style={{cursor:aiGenealogyScanning?"wait":"pointer",margin:0,opacity:aiGenealogyScanning ? 0.65 : 1}}>{aiGenealogyScanning?"Lendo árvore...":"🌳 Genealogia por foto"}<input key={aiGenealogyFileInputKey} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={aiScanning || aiGenealogyScanning} onChange={e=>void scanGenealogyPhoto(e.target.files?.[0])} style={{display:"none"}}/></label>
+          <label className="btn btn-soft" style={{cursor:aiScanning?"wait":"pointer",margin:0,opacity:aiScanning ? 0.65 : 1}}>📷 Foto da frente<input key={aiFileInputKey} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={aiScanning || aiGenealogyScanning} onChange={e=>setFrontLabelPhoto(e.target.files?.[0] || null)} style={{display:"none"}}/></label>
+          {!isFreePlan && <label className="btn btn-soft" style={{cursor:aiScanning?"wait":"pointer",margin:0,opacity:aiScanning ? 0.65 : 1}}>＋ Foto do verso (opcional)<input key={backFileInputKey} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={aiScanning || aiGenealogyScanning} onChange={e=>setBackLabelPhoto(e.target.files?.[0] || null)} style={{display:"none"}}/></label>}
+          <button type="button" className="btn btn-primary" disabled={aiScanning || aiGenealogyScanning || !frontLabelPhoto} onClick={()=>void scanBirdLabel()}>{aiScanning?"Analisando fotos...":"✨ Analisar fotos"}</button>
+          {!isFreePlan && <label className="btn btn-soft" style={{cursor:aiGenealogyScanning?"wait":"pointer",margin:0,opacity:aiGenealogyScanning ? 0.65 : 1}}>{aiGenealogyScanning?"Lendo árvore...":"🌳 Genealogia por foto"}<input key={aiGenealogyFileInputKey} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={aiScanning || aiGenealogyScanning} onChange={e=>void scanGenealogyPhoto(e.target.files?.[0])} style={{display:"none"}}/></label>}
         </div>
       </div>
       {aiScanError&&<p className="error" role="alert" style={{margin:"10px 0 0"}}>{aiScanError}</p>}
       {aiScanInfo&&<p style={{margin:"10px 0 0",fontSize:12,color:"var(--primary-dark)",fontWeight:700}}>{aiScanInfo}</p>}
+      {isFreePlan && aiUsage && <p style={{margin:"8px 0 0",fontSize:12,color:"var(--muted)"}}>Sua experiência gratuita: {aiUsage.used}/{aiUsage.limit} análise utilizada neste mês.</p>}
+      {showAiUpgrade && <div style={{marginTop:12,padding:14,borderRadius:12,background:"#f0f7ff",border:"1px solid #cfe3ff"}}><strong>🚀 {CONVERSION_COPY.aiLimit.title}</strong><p style={{fontSize:12,margin:"6px 0 10px",color:"var(--muted)"}}>{CONVERSION_COPY.aiLimit.description}</p><a className="btn btn-primary" href="/dashboard/assinatura">{CONVERSION_COPY.aiLimit.cta}</a></div>}
       {aiGenealogyError&&<p className="error" role="alert" style={{margin:"10px 0 0"}}>{aiGenealogyError}</p>}
       {aiGenealogyInfo&&<p style={{margin:"10px 0 0",fontSize:12,color:"var(--primary-dark)",fontWeight:700}}>{aiGenealogyInfo}</p>}
-      <small style={{display:"block",marginTop:8,color:"var(--muted)"}}>Disponível nos planos Profissional e Lenda. JPG, PNG ou WEBP; a imagem é otimizada automaticamente antes do envio. Confira os dados e os vínculos reconhecidos antes de salvar.</small>
+      {(frontLabelPhoto || backLabelPhoto) && <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:8,fontSize:11,color:"var(--muted)"}}>
+        {frontLabelPhoto && <span>Frente: {frontLabelPhoto.name}</span>}
+        {backLabelPhoto && <span>Verso: {backLabelPhoto.name} <button type="button" className="btn btn-ghost" style={{padding:"2px 6px",fontSize:10}} onClick={()=>{setBackLabelPhoto(null);setBackFileInputKey(x=>x+1);}}>Remover verso</button></span>}
+      </div>}
+      <small style={{display:"block",marginTop:8,color:"var(--muted)"}}>{isFreePlan ? "Experimente gratuitamente: 1 análise de plaquinha por mês, com uma foto da frente. Para analisar mais fotos, usar o verso ou identificar a genealogia automaticamente, conheça os planos pagos." : "Disponível nos planos Profissional e Lenda. JPG, PNG ou WEBP; a imagem é otimizada automaticamente antes do envio. Adicione a foto do verso se houver mais informações. Depois clique em Analisar fotos e confira os campos antes de salvar."}</small>
     </section> : <section style={{border:"1px solid var(--line)",borderRadius:14,padding:16,marginBottom:18,background:"#f8fafc"}}><strong>✨ Cadastro Inteligente por Foto</strong><p style={{fontSize:12,color:"var(--muted)",margin:"6px 0 10px"}}>Economize tempo: fotografe a plaquinha e a IA preenche os dados da ave automaticamente. Recurso disponível nos planos Profissional e Lenda.</p><a className="btn btn-soft" href="/dashboard/assinatura">Conhecer planos</a></section>)}
     <div className="form-grid">
       <div className="field"><label>Nome da ave *</label><input required value={f.name} onChange={e => set("name", e.target.value)} placeholder="Ex.: Thor" /></div>

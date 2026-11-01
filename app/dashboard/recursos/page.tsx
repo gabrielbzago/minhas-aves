@@ -3,10 +3,8 @@ import { requireUser } from "@/lib/auth";
 import { effectivePlan, normalizePlan, hasFeatureAccess, PLAN_INFO, PLAN_BENEFITS, requiredPlanForFeature, planLabel, isAmadorTrialActive } from "@/lib/plans";
 import { FEATURES, type FeatureCode } from "@/lib/features";
 import ModuleManager from "@/components/module-manager";
+import { CONVERSION_COPY, planCheckoutHref } from "@/lib/conversion";
 
-function targetCheckout(plan: string) {
-  return `/api/stripe/checkout?plan=${encodeURIComponent(plan)}`;
-}
 
 export default async function RecursosPage({searchParams}:{searchParams:Promise<{modulo?:string}>}){
  const {supabase,user}=await requireUser();
@@ -37,15 +35,15 @@ export default async function RecursosPage({searchParams}:{searchParams:Promise<
  const requiredLabel=planLabel(required);
  return <main className="content">
   <div className="page-title"><div><h1>Recursos</h1><p>Explore todos os módulos do Minhas Aves. Os módulos bloqueados continuam visíveis para você conhecer o que cada plano entrega.</p></div><Link className="btn btn-soft" href="/dashboard">Voltar ao painel</Link></div>
-  {!module&&<div className="module-grid dashboard-modules">{FEATURES.map(f=>{const ok=hasFeatureAccess(plan,f.code,{role:profile?.role,eligible:profile?.amador_trial_eligible,startedAt:trialStart,endsAt:trialEnd});return <Link href={`/dashboard/recursos?modulo=${f.code}`} className={`module-card ${ok?"":"locked"}`} key={f.code}><div className="module-icon">{ok?"✓":"🔒"}</div><div><strong>{f.title}</strong><p>{f.description}</p></div><span className="module-tier">{f.tier==="free"?"Grátis":f.tier==="amador"?"Amador":f.tier==="profissional"?"Profissional":"Lenda"}</span></Link>})}</div>}
+  {!module&&<div className="module-grid dashboard-modules">{FEATURES.map(f=>{const ok=hasFeatureAccess(plan,f.code,{role:profile?.role,eligible:profile?.amador_trial_eligible,startedAt:trialStart,endsAt:trialEnd});return <Link href={`/dashboard/recursos?modulo=${f.code}`} className={`module-card ${ok?"":"locked"}`} key={f.code}><div className="module-icon">{ok?"✓":"🔒"}</div><div><strong>{f.title}</strong><p>{f.description}</p></div><span className="module-tier">{f.tier==="free"?"Grátis":f.tier==="amador"?"Amador":f.tier==="profissional"?"Profissional":"Lenda"}</span>{!ok&&<span className="module-unlock-hint">🔓 Conhecer plano</span>}</Link>})}</div>}
   {module&&selected&&!allowed&&<div className="upgrade-card card">
     <div className="upgrade-card-icon">🔒</div>
-    <span className="kicker">RECURSO PREMIUM</span>
+    <span className="kicker">{CONVERSION_COPY.lockedFeature.eyebrow}</span>
     <h2>{selected.title}</h2>
-    {module && selected?.tier==="amador" && profile?.amador_trial_eligible && profile?.plan==="free" && !amadorTrialActive?<div className="member-note"><strong>🎁 Bônus exclusivo para novas contas</strong><span>Você tem 30 dias de teste dos recursos do Criatório Amador. O prazo começa agora, no seu primeiro uso, e depois o acesso é bloqueado até a contratação.</span></div>:<p className="upgrade-lead">Este recurso faz parte do <strong>{requiredLabel}</strong>. Você está no <strong>{planLabel(plan)}</strong>.</p>}
+    {module && selected?.tier==="amador" && profile?.amador_trial_eligible && profile?.plan==="free" && !amadorTrialActive?<div className="member-note"><strong>🎁 Bônus exclusivo para novas contas</strong><span>Você tem 30 dias de teste dos recursos do Criatório Amador. O prazo começa agora, no seu primeiro uso, e depois o acesso é bloqueado até a contratação.</span></div>:<p className="upgrade-lead">{CONVERSION_COPY.lockedFeature.description} Este recurso faz parte do <strong>{requiredLabel}</strong>; seu plano atual é <strong>{planLabel(plan)}</strong>.</p>}
     <div className="upgrade-grid">
       <div className="upgrade-feature-box"><h3>O que você libera</h3><ul>{PLAN_BENEFITS[required].map((benefit)=><li key={benefit}>✓ {benefit}</li>)}</ul></div>
-      <div className="upgrade-price-box"><span>Plano {requiredLabel}</span><strong>{requiredInfo.annualPrice===0?"Grátis":`R$ ${requiredInfo.annualPrice.toFixed(2).replace('.',',')}`}</strong>{requiredInfo.annualPrice>0&&<small>/ano · aves ilimitadas</small>}<a className="btn btn-primary" href={targetCheckout(required)}>Fazer upgrade agora</a><Link className="btn btn-soft" href="/dashboard/assinatura">Comparar todos os planos</Link></div>
+      <div className="upgrade-price-box"><span>Plano {requiredLabel}</span><strong>{requiredInfo.annualPrice===0?"Grátis":`R$ ${requiredInfo.annualPrice.toFixed(2).replace('.',',')}`}</strong>{requiredInfo.annualPrice>0&&<small>/ano · aves ilimitadas</small>}<a className="btn btn-primary" href={planCheckoutHref(required)}>{CONVERSION_COPY.lockedFeature.cta}</a><Link className="btn btn-soft" href="/dashboard/assinatura">Comparar todos os planos</Link></div>
     </div>
     <div className="upgrade-actions"><Link className="btn btn-ghost" href="/dashboard/recursos">← Ver todos os módulos</Link></div>
   </div>}

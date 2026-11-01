@@ -6,28 +6,40 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
-const MONTHLY_LIMITS: Record<string, number> = { profissional: 30, lenda: 100 };
+const MONTHLY_LIMITS: Record<string, number> = { free: 1, profissional: 30, lenda: 100 };
 
 export async function POST(request: Request) {
   try {
     const { supabase, user } = await requireUser();
     const { data: profile } = await supabase.from("profiles").select("plan,role").eq("id", user.id).maybeSingle();
     const plan = effectivePlan(profile?.plan, profile?.role);
-    if (!["profissional", "lenda"].includes(plan) && profile?.role !== "owner" && profile?.role !== "veterinarian") {
-      return NextResponse.json({ error: "O Cadastro Inteligente por Foto está disponível nos planos Profissional e Lenda." }, { status: 403 });
+    const isPrivileged = profile?.role === "owner" || profile?.role === "veterinarian";
+    if (!MONTHLY_LIMITS[plan] && !isPrivileged) {
+      return NextResponse.json({ error: "O Cadastro Inteligente por Foto está disponível com uma experiência gratuita e limites ampliados nos planos pagos." }, { status: 403 });
     }
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) return NextResponse.json({ error: "O recurso ainda não está configurado. O administrador precisa cadastrar OPENAI_API_KEY nas variáveis de ambiente da Vercel." }, { status: 503 });
 
     const body = await request.json();
-    const image = String(body?.image || "");
-    const mime = String(body?.mimeType || "").toLowerCase();
-    if (!["image/jpeg", "image/png", "image/webp"].includes(mime)) return NextResponse.json({ error: "Envie uma imagem JPG, PNG ou WEBP." }, { status: 400 });
-    const match = image.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
-    if (!match || match[1] !== mime) return NextResponse.json({ error: "Imagem inválida. Selecione novamente o arquivo." }, { status: 400 });
-    const bytes = Buffer.from(match[2], "base64");
-    if (!bytes.length || bytes.length > MAX_IMAGE_BYTES) return NextResponse.json({ error: "A imagem otimizada deve ter no máximo 3 MB." }, { status: 413 });
+    const mode = body?.mode === "genealogy" ? "genealogy" : "bird";
+    const rawImages = Array.isArray(body?.images) ? body.images : [{ image: body?.image, mimeType: body?.mimeType }];
+    if (plan === "free" && !isPrivileged && mode === "genealogy") return NextResponse.json({ error: "A genealogia por foto é um recurso dos planos Profissional e Lenda. Faça upgrade para desbloquear essa ferramenta." }, { status: 403 });
+    if (plan === "free" && !isPrivileged && rawImages.length > 1) return NextResponse.json({ error: "No plano Grátis, você pode experimentar uma foto da frente por mês. O envio da frente e do verso está disponível nos planos pagos." }, { status: 403 });
+    if (!rawImages.length || rawImages.length > 2) return NextResponse.json({ error: "Envie uma ou duas fotos da plaquinha." }, { status: 400 });
+    const imagePayloads = rawImages.map((item: any) => {
+      const image = String(item?.image || "");
+      const mime = String(item?.mimeType || "").toLowerCase();
+      if (!["image/jpeg", "image/png", "image/webp"].includes(mime)) throw new Error("Envie imagens JPG, PNG ou WEBP.");
+      const match = image.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
+      if (!match || match[1] !== mime) throw new Error("Imagem inválida. Selecione novamente o arquivo.");
+      const bytes = Buffer.from(match[2], "base64");
+      if (!bytes.length || bytes.length > MAX_IMAGE_BYTES) throw new Error("Cada imagem otimizada deve ter no máximo 3 MB.");
+      return { mime, base64: bytes.toString("base64") };
+    });
+    if (imagePayloads.reduce((sum: number, item: any) => sum + Buffer.byteLength(item.base64, "base64"), 0) > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: "O conjunto das fotos ultrapassa o limite de 5 MB." }, { status: 413 });
+    }
 
     const month = new Date().toISOString().slice(0, 7);
     const { count, error: countError } = await supabase.from("ai_bird_scan_usage").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("usage_month", month);
@@ -36,11 +48,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Não foi possível validar o limite mensal do recurso. Verifique a migration do Supabase." }, { status: 500 });
     }
     const limit = MONTHLY_LIMITS[plan] || 1000;
-    if (profile?.role !== "owner" && profile?.role !== "veterinarian" && (count || 0) >= limit) {
-      return NextResponse.json({ error: `Você atingiu o limite de ${limit} leituras por foto neste mês do plano ${plan === "lenda" ? "Lenda" : "Profissional"}.` }, { status: 429 });
+    if (!isPrivileged && (count || 0) >= limit) {
+      const message = plan === "free"
+        ? "Você já utilizou sua análise gratuita deste mês. Faça upgrade para o Profissional e tenha até 30 análises mensais, foto da frente e do verso e genealogia por foto."
+        : `Você atingiu o limite de ${limit} leituras por foto neste mês do plano ${plan === "lenda" ? "Lenda" : "Profissional"}.`;
+      return NextResponse.json({ error: message, upgrade: plan === "free", usage: { used: count || 0, limit } }, { status: 429 });
     }
-
-    const mode = body?.mode === "genealogy" ? "genealogy" : "bird";
     let prompt = "";
     let speciesCatalog: any[] = [];
     if (mode === "genealogy") {
@@ -65,7 +78,7 @@ Retorne as chaves: bird_name, father_name, father_ring_number, mother_name, moth
     } else {
       const { data: speciesRows } = await supabase.from("species").select("id,common_name,scientific_name").eq("is_active", true).order("common_name");
       speciesCatalog = (speciesRows || []).map((s: any) => ({ id: s.id, nome_popular: s.common_name, nome_cientifico: s.scientific_name }));
-      prompt = `Você é um especialista em leitura de plaquinhas e fichas de identificação de aves de criatórios brasileiros. Sua tarefa é EXTRAIR E CLASSIFICAR os dados, não apenas copiar rótulos impressos. Leia a imagem inteira, observe a posição dos textos, padrões de códigos e contexto típico de anilhas de aves. Retorne SOMENTE um objeto JSON válido.
+      prompt = `Você é um especialista em leitura de plaquinhas e fichas de identificação de aves de criatórios brasileiros. Sua tarefa é EXTRAIR E CLASSIFICAR os dados, não apenas copiar rótulos impressos. Leia cuidadosamente todas as imagens enviadas (frente e verso podem conter informações complementares). Combine as informações das duas faces em um único cadastro, resolva divergências priorizando o texto mais legível e não descarte dados presentes somente no verso. Observe a posição dos textos, padrões de códigos e contexto típico de anilhas de aves. Retorne SOMENTE um objeto JSON válido.
 
 REGRA GERAL: não exija que o campo esteja explicitamente nomeado. Em placas antigas e modernas, os dados podem aparecer sem rótulos como "anilha", "nascimento" ou "IBAMA". Use o padrão visual e o contexto para classificar. Não invente caracteres: quando não conseguir distinguir um caractere, deixe o campo correspondente null em vez de adivinhar.
 
@@ -108,7 +121,10 @@ Examine cuidadosamente números pequenos e sequências alfanuméricas, principal
             : "Você é especialista em plaquinhas de criatórios brasileiros. Extraia os caracteres visíveis com máxima atenção e classifique códigos pelo padrão e contexto mesmo sem rótulo. Não invente caracteres nem complete datas ou números ausentes. Diferencie rigorosamente código de anilha de registro regulatório." },
           { role: "user", content: [
             { type: "text", text: prompt },
-            { type: "image_url", image_url: { url: `data:${mime};base64,${bytes.toString("base64")}`, detail: "high" } }
+            ...imagePayloads.map((item: any, index: number) => ({
+              type: "image_url",
+              image_url: { url: `data:${item.mime};base64,${item.base64}`, detail: "high" },
+            }))
           ]}
         ]
       })

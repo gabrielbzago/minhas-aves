@@ -962,3 +962,21 @@ body{background:var(--bg);color:var(--text)}
  .dashboard-total-pill{font-size:10px}
  .sex-insight-footer{flex-wrap:wrap;gap:10px}
 }
+
+/* Apollo: camada consistente de conversão por plano */
+.apollo-upgrade-banner{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:16px;align-items:center;padding:18px 20px;margin:0 0 20px;border:1px solid #cfe6d9;border-radius:18px;background:linear-gradient(110deg,#f0faf4 0%,#fff 72%);box-shadow:0 5px 20px rgba(31,92,67,.045)}
+.apollo-upgrade-banner.compact{grid-template-columns:38px minmax(0,1fr) auto;padding:12px 16px;margin:0 0 18px;border-radius:14px}
+.apollo-upgrade-mark{width:44px;height:44px;border-radius:13px;background:#dff3e7;color:#16734b;display:grid;place-items:center}
+.apollo-upgrade-banner.compact .apollo-upgrade-mark{width:36px;height:36px}
+.apollo-upgrade-content>span{font-size:9px;letter-spacing:.09em;font-weight:900;color:#26734f}
+.apollo-upgrade-content h2{font-size:16px;margin:3px 0 4px;color:#173d2d}
+.apollo-upgrade-content p{font-size:12px;line-height:1.5;color:#607268;margin:0}
+.apollo-upgrade-content ul{display:flex;flex-wrap:wrap;gap:7px 18px;padding:0;margin:9px 0 0;list-style:none;font-size:11px;color:#315e48}
+.apollo-upgrade-content li:before{content:"✓ ";font-weight:900;color:#16804f}
+.apollo-upgrade-action{display:flex;flex-direction:column;gap:6px;align-items:flex-end;white-space:nowrap}
+.apollo-upgrade-action small{font-size:10px;color:#64776d}
+.apollo-upgrade-action .btn{display:inline-flex;align-items:center;gap:7px}
+.module-unlock-hint{position:absolute;bottom:12px;right:13px;font-size:10px;font-weight:800;color:#23744f}
+.module-card.locked{opacity:.82;background:linear-gradient(135deg,#fff,#f8fbf9)}
+.module-card.locked:hover{opacity:1;box-shadow:0 8px 24px rgba(31,92,67,.08)}
+@media(max-width:700px){.apollo-upgrade-banner,.apollo-upgrade-banner.compact{grid-template-columns:36px minmax(0,1fr);gap:10px;padding:13px}.apollo-upgrade-mark{width:34px;height:34px}.apollo-upgrade-content h2{font-size:14px}.apollo-upgrade-action{grid-column:1/-1;align-items:stretch;white-space:normal}.apollo-upgrade-action .btn{justify-content:center}.apollo-upgrade-content ul{display:grid;gap:4px}.module-unlock-hint{position:static;display:block;margin-left:auto;align-self:flex-end}}

@@ -14,7 +14,7 @@ const commonPaid = [
 ];
 
 export const PLAN_FEATURES: Record<PlanCode, Set<string>> = {
-  free: new Set(["gestao-ave", "historico-ave", "genealogia", "painel", "especies", "cartao-gaiola", "agendar-veterinario"]),
+  free: new Set(["gestao-ave", "historico-ave", "genealogia", "painel", "especies", "cartao-gaiola", "agendar-veterinario", "cadastro-inteligente-foto"]),
   amador: new Set([...commonPaid, "agendar-veterinario"]),
   profissional: new Set([...commonPaid, "reproducao", "doencas", "medicamentos", "genotipagem", "sexagem", "agendar-veterinario", "modulo-veterinario", "cadastro-inteligente-foto"]),
   lenda: new Set([...commonPaid, "reproducao", "doencas", "medicamentos", "genotipagem", "sexagem", "agendar-veterinario", "consulta-veterinaria-inclusa", "modulo-veterinario", "cadastro-inteligente-foto"]),
@@ -25,7 +25,7 @@ export const PLAN_ORDER: PlanCode[] = ["free", "amador", "profissional", "lenda"
 export const PLAN_BENEFITS: Record<PlanCode, string[]> = {
   free: [
     "Até 5 aves", "Cadastro e gestão das aves", "Histórico e genealogia",
-    "Pré-visualização do cartão de gaiola", "Agendamento veterinário", "Controle pelo celular",
+    "Pré-visualização do cartão de gaiola", "1 análise de plaquinha por mês com IA", "Agendamento veterinário", "Controle pelo celular",
   ],
   amador: [
     "Tudo do Grátis", "Plantel ilimitado", "Gestão de anilhas", "Fotos, documentos e gaiolas",
@@ -33,12 +33,12 @@ export const PLAN_BENEFITS: Record<PlanCode, string[]> = {
   ],
   profissional: [
     "Tudo do Criatório Amador", "Gestão de reprodução", "Doenças e acompanhamento", "Medicamentos",
-    "Genotipagem", "Sexagem", "Cadastro inteligente de aves e genealogia por foto com IA", "Módulo Veterinário completo",
+    "Genotipagem", "Sexagem", "Cadastro inteligente de aves por foto (30 análises/mês), foto do verso e genealogia por IA", "Módulo Veterinário completo",
   ],
   lenda: [
     "Tudo do Criatório Profissional", "1 consulta veterinária inclusa por período anual pago",
     "1 ave por consulta inclusa", "Histórico veterinário permanente", "Prontuário + receita em PDF",
-    "Novo benefício a cada renovação", "Cadastro inteligente de aves e genealogia por foto com IA", "Módulo Veterinário completo",
+    "Novo benefício a cada renovação", "Cadastro inteligente de aves por foto (100 análises/mês), foto do verso e genealogia por IA", "Módulo Veterinário completo",
   ],
 };
 
