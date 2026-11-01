@@ -1,0 +1,1 @@
+Apollo 0.5.66 — Modo Owner no celular. Substitua os arquivos do projeto pelo conteúdo deste pacote e publique na Vercel. Não há migração SQL. Os controles só são renderizados no shell administrativo autenticado como Owner; a API também valida a identidade antes de ativar o modo de criador.

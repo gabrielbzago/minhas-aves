@@ -980,3 +980,13 @@ body{background:var(--bg);color:var(--text)}
 .module-card.locked{opacity:.82;background:linear-gradient(135deg,#fff,#f8fbf9)}
 .module-card.locked:hover{opacity:1;box-shadow:0 8px 24px rgba(31,92,67,.08)}
 @media(max-width:700px){.apollo-upgrade-banner,.apollo-upgrade-banner.compact{grid-template-columns:36px minmax(0,1fr);gap:10px;padding:13px}.apollo-upgrade-mark{width:34px;height:34px}.apollo-upgrade-content h2{font-size:14px}.apollo-upgrade-action{grid-column:1/-1;align-items:stretch;white-space:normal}.apollo-upgrade-action .btn{justify-content:center}.apollo-upgrade-content ul{display:grid;gap:4px}.module-unlock-hint{position:static;display:block;margin-left:auto;align-self:flex-end}}
+
+
+/* Owner-only mobile mode controls */
+.owner-mobile-mode-switcher{display:flex;gap:8px;align-items:center;margin-left:auto}
+.owner-mobile-mode-switcher button,.owner-mobile-mode-switcher a{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--border,#dce8e1);border-radius:10px;padding:9px 11px;background:var(--surface,#fff);color:var(--text,#173b2b);font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}
+.owner-mobile-mode-switcher button{background:var(--primary,#176b45);color:#fff;border-color:var(--primary,#176b45)}
+.owner-preview-top-actions{display:flex;align-items:center;gap:7px}
+.owner-preview-top-actions>a{font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}
+.owner-preview-top-actions .preview-exit{white-space:nowrap}
+@media(max-width:760px){.owner-mobile-mode-switcher{width:100%;margin:10px 0 0;display:grid;grid-template-columns:1fr 1fr}.owner-mobile-mode-switcher button,.owner-mobile-mode-switcher a{min-height:42px}.owner-preview-top-actions{display:flex;gap:5px}.owner-preview-top-actions>a{font-size:11px}.owner-preview-top-actions .preview-exit{font-size:11px;padding:7px 8px}.topbar{flex-wrap:wrap}}
