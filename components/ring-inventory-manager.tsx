@@ -27,6 +27,27 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
   useEffect(()=>{void load();},[]);
   const available=rows.filter(r=>r.status==="disponivel");
   const applied=rows.filter(r=>r.status==="aplicada");
+  // Resumo gerencial: distribuição do estoque por espécie e vínculo com as matrizes.
+  const speciesSummary=useMemo(()=>{
+    const groups=new Map<string,any>();
+    rows.forEach(r=>{
+      const key=r.species_id||"sem-especie";
+      if(!groups.has(key))groups.set(key,{key,name:r.species?.common_name||"Espécie não informada",scientific:r.species?.scientific_name||"",total:0,available:0,applied:0,other:0});
+      const g=groups.get(key);g.total++;
+      if(r.status==="disponivel")g.available++;else if(r.status==="aplicada")g.applied++;else g.other++;
+    });
+    return [...groups.values()].sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name,"pt-BR"));
+  },[rows]);
+  const maxSpeciesTotal=Math.max(1,...speciesSummary.map((g:any)=>g.total));
+  const motherSummary=useMemo(()=>{
+    const groups=new Map<string,any>();
+    rows.filter(r=>r.mother_id||r.mother?.name).forEach(r=>{
+      const key=r.mother_id||r.mother?.name||"sem-matriz";
+      if(!groups.has(key))groups.set(key,{key,name:r.mother?.name||"Fêmea não identificada",ringNumber:r.mother?.ring_number||"",rings:[],available:0,applied:0});
+      const g=groups.get(key);g.rings.push(r);if(r.status==="disponivel")g.available++;if(r.status==="aplicada")g.applied++;
+    });
+    return [...groups.values()].sort((a,b)=>a.name.localeCompare(b.name,"pt-BR"));
+  },[rows]);
   const filtered=useMemo(()=>rows.filter(r=>(filter==="todos"||r.status===filter)&&(`${r.ring_number} ${r.species?.common_name||""} ${r.notes||""}`).toLowerCase().includes(query.toLowerCase())),[rows,filter,query]);
   const set=(k:string,v:string)=>setForm((x:any)=>({...x,[k]:v}));
   async function add(e:any){
@@ -70,6 +91,35 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
       <div className="stat"><small>Aplicadas</small><strong>{applied.length}</strong></div>
       <div className="stat"><small>Sexo indefinido</small><strong>{rows.filter(r=>r.sex==="indeterminado").length}</strong></div>
     </div>
+    <section className="form-card" style={{marginTop:16}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+        <div><h3 style={{marginBottom:4}}>Painel de estoque por espécie</h3><p style={{margin:0}}>Acompanhe a quantidade de anilhas de cada espécie e a situação do estoque.</p></div>
+        <span className="badge">{speciesSummary.length} espécie(s)</span>
+      </div>
+      {loading?<div className="empty">Carregando indicadores...</div>:speciesSummary.length===0?<div className="empty">Ainda não há anilhas cadastradas para gerar o painel.</div>:<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:14,marginTop:18}}>
+        {speciesSummary.map((g:any)=>{
+          const availablePct=g.total?g.available/g.total*100:0;const appliedPct=g.total?g.applied/g.total*100:0;
+          return <article key={g.key} style={{border:"1px solid var(--border, #e5e7eb)",borderRadius:12,padding:14,minWidth:0}}>
+            <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"start"}}><div style={{minWidth:0}}><strong>{g.name}</strong>{g.scientific&&<small style={{display:"block",color:"var(--muted,#64748b)",marginTop:3}}>{g.scientific}</small>}</div><strong style={{fontSize:24}}>{g.total}</strong></div>
+            <div style={{height:12,display:"flex",overflow:"hidden",borderRadius:99,background:"var(--surface-secondary,#edf1ee)",marginTop:14}} title={`${g.available} disponíveis, ${g.applied} aplicadas`}>
+              {g.available>0&&<div style={{width:`${availablePct}%`,background:"#16a34a"}}/>}{g.applied>0&&<div style={{width:`${appliedPct}%`,background:"#3b82f6"}}/>}
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",gap:8,flexWrap:"wrap",fontSize:12,marginTop:10}}><span><i style={{display:"inline-block",width:8,height:8,borderRadius:9,background:"#16a34a",marginRight:5}}/>Disponíveis: <b>{g.available}</b></span><span><i style={{display:"inline-block",width:8,height:8,borderRadius:9,background:"#3b82f6",marginRight:5}}/>Aplicadas: <b>{g.applied}</b></span></div>
+            {g.other>0&&<small style={{display:"block",marginTop:7,color:"var(--muted,#64748b)"}}>Outras situações: {g.other}</small>}
+          </article>;
+        })}
+      </div>}
+    </section>
+    <section className="form-card" style={{marginTop:16}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap"}}><div><h3 style={{marginBottom:4}}>Anilhas vinculadas às fêmeas (matrizes)</h3><p style={{margin:0}}>Veja quais anilhas foram cadastradas com cada fêmea como mãe da futura ave.</p></div><strong>{motherSummary.reduce((n:number,g:any)=>n+g.rings.length,0)} vínculo(s)</strong></div>
+      {loading?<div className="empty">Carregando vínculos...</div>:motherSummary.length===0?<div className="empty">Nenhuma anilha possui uma fêmea/matriz vinculada. Ao cadastrar uma anilha, selecione a mãe para acompanhar essa relação aqui.</div>:<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:14,marginTop:16}}>
+        {motherSummary.map((g:any)=><article key={g.key} style={{border:"1px solid var(--border, #e5e7eb)",borderRadius:12,padding:14,minWidth:0}}>
+          <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"start"}}><div><strong>{g.name}</strong>{g.ringNumber&&<small style={{display:"block",color:"var(--muted,#64748b)"}}>Anilha da matriz: {g.ringNumber}</small>}</div><strong>{g.rings.length} anilha(s)</strong></div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:12}}>{g.rings.map((r:any)=><span key={r.id} style={{padding:"5px 9px",borderRadius:8,background:"var(--surface-secondary,#f1f5f2)",fontSize:12,fontWeight:700}}>{r.ring_number}</span>)}</div>
+          <small style={{display:"block",marginTop:10,color:"var(--muted,#64748b)"}}>{g.available} disponível(is) · {g.applied} aplicada(s)</small>
+        </article>)}
+      </div>}
+    </section>
     {error&&<div className="error" role="alert">{error}</div>}
     <div className="form-card" style={{marginTop:16}}>
       <h3>Cadastrar anilha no estoque</h3>
