@@ -38,11 +38,12 @@ export default function SexagemManager({ birds = [] }: { birds: any[] }) {
     const ring = rings.find(r => r.id === id);
     const previous = current[id];
     const next = {
-      name: previous?.name ?? `Filhote ${ring?.ring_number || ""}`,
-      birth_date: previous?.birth_date ?? "",
-      father_id: previous?.father_id ?? ring?.father_id ?? "",
-      mother_id: previous?.mother_id ?? ring?.mother_id ?? "",
-      ...previous,
+      ...(previous ?? {
+        name: `Filhote ${ring?.ring_number || ""}`,
+        birth_date: "",
+        father_id: ring?.father_id ?? "",
+        mother_id: ring?.mother_id ?? "",
+      }),
       [key]: value,
     };
     return { ...current, [id]: next };
