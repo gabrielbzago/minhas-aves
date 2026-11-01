@@ -42,7 +42,35 @@ export async function POST(request: Request) {
 
     const { data: speciesRows } = await supabase.from("species").select("id,common_name,scientific_name").eq("is_active", true).order("common_name");
     const speciesCatalog = (speciesRows || []).map((s: any) => ({ id: s.id, nome_popular: s.common_name, nome_cientifico: s.scientific_name }));
-    const prompt = `Você é um extrator de dados de plaquinhas de identificação de aves de criatórios brasileiros. Leia a imagem e retorne SOMENTE JSON válido. Não invente dados. Se um campo estiver ausente ou ilegível, use null. Datas em YYYY-MM-DD somente se dia, mês e ano forem inequívocos; caso contrário null. Sexo deve ser "macho", "femea" ou "indeterminado". Não confunda número de anilha com registro regulatório. Se a plaquinha contiver nome popular/científico, identifique ambos. Escolha species_id apenas por correspondência inequívoca com o catálogo fornecido; se houver dúvida, null. O nome da ave é o nome individual, não o nome da espécie. Campos: name, species_id, sex, birth_date, ring_number, ibama_registration_number, ibama_record_type, genetic_line, mutation_type, notes, genetics. mutation_type deve ser uma destas opções quando legível: Lutino, Branco, Preto, Canela, Diluido, Laranjeira, Ardesiaca; caso contrário null. genetics deve ser objeto JSON. Catálogo de espécies: ${JSON.stringify(speciesCatalog)}.`;
+    const prompt = `Você é um especialista em leitura de plaquinhas e fichas de identificação de aves de criatórios brasileiros. Sua tarefa é EXTRAIR E CLASSIFICAR os dados, não apenas copiar rótulos impressos. Leia a imagem inteira, observe a posição dos textos, padrões de códigos e contexto típico de anilhas de aves. Retorne SOMENTE um objeto JSON válido.
+
+REGRA GERAL: não exija que o campo esteja explicitamente nomeado. Em placas antigas e modernas, os dados podem aparecer sem rótulos como "anilha", "nascimento" ou "IBAMA". Use o padrão visual e o contexto para classificar. Não invente caracteres: quando não conseguir distinguir um caractere, deixe o campo correspondente null em vez de adivinhar.
+
+CLASSIFICAÇÃO DA ANILHA (MUITO IMPORTANTE):
+- O código da anilha pode aparecer sozinho, sem a palavra "anilha". Procure sequências alfanuméricas que tenham formato típico de identificação de anilha.
+- Em criatórios brasileiros, uma anilha pode conter marca ou sigla como IBAMA/SISPASS, medida/diâmetro do aro (por exemplo 2.2), UF ou código de região (por exemplo MG/A), um trecho de data (por exemplo 05 06 ou 0506) e um número sequencial final, frequentemente com cerca de seis dígitos (por exemplo 093272).
+- Exemplos ilustrativos de código completo de anilha: "IBAMA 2.2 MG/A 0506 093272", "SISPASS 2.2 MG/A 093272", "2.2 MG/A 093272". Esses exemplos explicam padrões; NÃO os copie se não estiverem na imagem.
+- Se encontrar uma sequência compatível com esse padrão, preencha ring_number com o código COMPLETO, preservando letras, números, barras, pontos e a ordem original. Não descarte o prefixo IBAMA/SISPASS, a medida ou o sufixo numérico.
+- Não confunda o código físico da anilha com um número de registro/cadastro do criador. O número de anilha identifica o pássaro e normalmente tem estrutura compacta com códigos e número sequencial.
+- Preencha ibama_registration_number somente quando houver outro número claramente identificável como registro oficial do criador/IBAMA, distinto da anilha. Se houver apenas um código e ele tiver formato típico de anilha, priorize ring_number e deixe ibama_registration_number null.
+- Se houver dois códigos, classifique cada um separadamente. Nunca duplique o mesmo código nos dois campos.
+- Se houver um código alfanumérico sem rótulo e não for possível decidir com segurança, coloque-o em ring_number apenas se o padrão de anilha for forte; caso contrário, deixe os campos de identificação vazios e registre a dúvida em notes.
+
+NOME E ESPÉCIE:
+- O nome da ave é o nome individual/apelido, por exemplo "Thunderbolt"; não substitua pelo nome da espécie.
+- Identifique nome popular e nome científico quando visíveis ou claramente reconhecíveis pelo texto.
+- Escolha species_id apenas se uma espécie do catálogo corresponder com segurança ao nome popular ou científico encontrado. Se houver dúvida, null. Não invente espécie por aparência da ave em uma plaquinha textual.
+- Catálogo ativo do criatório: ${JSON.stringify(speciesCatalog)}.
+
+OUTROS CAMPOS:
+- Datas de nascimento podem estar sem rótulo. Identifique datas em formatos brasileiros DD/MM/AAAA, DD-MM-AAAA ou DD.MM.AAAA. Converta para YYYY-MM-DD somente quando dia, mês e ano forem inequívocos. Um trecho curto como 05/06 sem ano não é uma data de nascimento completa: não invente o ano.
+- Sexo: "macho", "femea" ou "indeterminado". Considere M/Macho e F/Fêmea.
+- mutation_type deve ser exatamente uma destas opções quando legível: Lutino, Branco, Preto, Canela, Diluido, Laranjeira, Ardesiaca; caso contrário null.
+- Preserve observações úteis em notes. genetics deve ser objeto JSON.
+- Retorne estas chaves: name, common_name, scientific_name, species_id, sex, birth_date, ring_number, ibama_registration_number, ibama_record_type, genetic_line, mutation_type, notes, genetics.
+- Para campos ausentes/ilegíveis use null. Não complete informações por suposição. A classificação contextual dos códigos é permitida, mas a invenção de caracteres não.
+
+Examine cuidadosamente números pequenos e sequências alfanuméricas, principalmente linhas sem rótulos entre o nome da ave e a data de nascimento.`;
     const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -51,7 +79,7 @@ export async function POST(request: Request) {
         temperature: 0,
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: "Extraia somente informações realmente visíveis. Nunca deduza ou complete dados ausentes." },
+          { role: "system", content: "Você é especialista em plaquinhas de criatórios brasileiros. Extraia os caracteres visíveis com máxima atenção e classifique códigos pelo padrão e contexto mesmo sem rótulo. Não invente caracteres nem complete datas ou números ausentes. Diferencie rigorosamente código de anilha de registro regulatório." },
           { role: "user", content: [
             { type: "text", text: prompt },
             { type: "image_url", image_url: { url: `data:${mime};base64,${bytes.toString("base64")}`, detail: "high" } }
@@ -71,13 +99,19 @@ export async function POST(request: Request) {
 
     const allowedMutations = ["Lutino", "Branco", "Preto", "Canela", "Diluido", "Laranjeira", "Ardesiaca"];
     const species = speciesCatalog.find((s: any) => s.id === parsed.species_id);
+    const normalizedRing = typeof parsed.ring_number === "string" ? parsed.ring_number.trim() : "";
+    const normalizedIbama = typeof parsed.ibama_registration_number === "string" ? parsed.ibama_registration_number.trim() : "";
+    const ringPattern = /(?:\bIBAMA\b|\bSISPASS\b|\b\d[.,]\d\b|\b[A-Z]{2}\s*\/\s*[A-Z]\b)/i;
+    const ibamaLooksLikeRing = !normalizedRing && normalizedIbama && ringPattern.test(normalizedIbama) && (normalizedIbama.match(/\d/g) || []).length >= 5;
+    const finalRingNumber = normalizedRing || (ibamaLooksLikeRing ? normalizedIbama : "");
+    const finalIbamaRegistration = ibamaLooksLikeRing ? "" : normalizedIbama;
     const payload = {
       name: typeof parsed.name === "string" ? parsed.name.trim().slice(0, 100) : "",
       species_id: species?.id || null,
       sex: ["macho", "femea", "indeterminado"].includes(parsed.sex) ? parsed.sex : "indeterminado",
       birth_date: typeof parsed.birth_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(parsed.birth_date) ? parsed.birth_date : "",
-      ring_number: typeof parsed.ring_number === "string" ? parsed.ring_number.trim().slice(0, 120) : "",
-      ibama_registration_number: typeof parsed.ibama_registration_number === "string" ? parsed.ibama_registration_number.trim().slice(0, 120) : "",
+      ring_number: finalRingNumber.slice(0, 120),
+      ibama_registration_number: finalIbamaRegistration.slice(0, 120),
       ibama_record_type: typeof parsed.ibama_record_type === "string" ? parsed.ibama_record_type.trim().slice(0, 120) : "",
       genetic_line: typeof parsed.genetic_line === "string" ? parsed.genetic_line.trim().slice(0, 160) : "",
       mutation_type: allowedMutations.includes(parsed.mutation_type) ? parsed.mutation_type : "",
