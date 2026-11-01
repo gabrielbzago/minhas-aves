@@ -33,12 +33,12 @@ export const PLAN_BENEFITS: Record<PlanCode, string[]> = {
   ],
   profissional: [
     "Tudo do Criatório Amador", "Gestão de reprodução", "Doenças e acompanhamento", "Medicamentos",
-    "Genotipagem", "Sexagem", "Cadastro inteligente de aves por foto com IA", "Módulo Veterinário completo",
+    "Genotipagem", "Sexagem", "Cadastro inteligente de aves e genealogia por foto com IA", "Módulo Veterinário completo",
   ],
   lenda: [
     "Tudo do Criatório Profissional", "1 consulta veterinária inclusa por período anual pago",
     "1 ave por consulta inclusa", "Histórico veterinário permanente", "Prontuário + receita em PDF",
-    "Novo benefício a cada renovação", "Cadastro inteligente de aves por foto com IA", "Módulo Veterinário completo",
+    "Novo benefício a cada renovação", "Cadastro inteligente de aves e genealogia por foto com IA", "Módulo Veterinário completo",
   ],
 };
 

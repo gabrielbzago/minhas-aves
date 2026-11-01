@@ -11,6 +11,10 @@ export default function BirdForm({ species, birds, initialBird, canUseAi = false
   const [aiScanError, setAiScanError] = useState("");
   const [aiScanInfo, setAiScanInfo] = useState("");
   const [aiFileInputKey, setAiFileInputKey] = useState(0);
+  const [aiGenealogyScanning, setAiGenealogyScanning] = useState(false);
+  const [aiGenealogyError, setAiGenealogyError] = useState("");
+  const [aiGenealogyInfo, setAiGenealogyInfo] = useState("");
+  const [aiGenealogyFileInputKey, setAiGenealogyFileInputKey] = useState(0);
   const [stockRings, setStockRings] = useState<any[]>([]);
   const [stockRingId, setStockRingId] = useState("");
   const [f, setF] = useState<any>(initialBird
@@ -78,6 +82,47 @@ export default function BirdForm({ species, birds, initialBird, canUseAi = false
     } catch (error: any) {
       setAiScanError(error?.message || "Não foi possível analisar a imagem.");
     } finally { setAiScanning(false); setAiFileInputKey((x: number) => x + 1); }
+  }
+
+  async function scanGenealogyPhoto(file?: File) {
+    setAiGenealogyError(""); setAiGenealogyInfo("");
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { setAiGenealogyError("Use uma imagem JPG, PNG ou WEBP."); return; }
+    if (file.size > 8 * 1024 * 1024) { setAiGenealogyError("A imagem deve ter no máximo 8 MB."); return; }
+    setAiGenealogyScanning(true);
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 1800 / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext("2d");
+      if (!context) { bitmap.close(); throw new Error("Não foi possível preparar a imagem."); }
+      context.fillStyle = "#ffffff"; context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close();
+      const compressed = await new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Falha ao otimizar a imagem.")), "image/jpeg", 0.84));
+      if (compressed.size > 3 * 1024 * 1024) throw new Error("A imagem continua muito pesada. Tente uma foto com menor resolução.");
+      const image = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Não foi possível ler a imagem."));
+        reader.onerror = () => reject(new Error("Falha ao abrir a imagem."));
+        reader.readAsDataURL(compressed);
+      });
+      const response = await fetch("/api/ai/parse-bird-label", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image, mimeType: "image/jpeg", mode: "genealogy" }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Não foi possível analisar a genealogia.");
+      const data = result.data || {};
+      setF((current: any) => ({ ...current, father_id: data.father_id || "", mother_id: data.mother_id || "" }));
+      const describe = (label: string, item: any) => {
+        if (item?.status === "vinculado") return `${label}: ${item.name} vinculado`;
+        if (item?.status === "ambiguo") return `${label}: ${item.name || item.ring_number || "identificação"} — mais de uma ave corresponde; selecione manualmente`;
+        if (item?.status === "nao_cadastrado") return `${label}: ${item.name || item.ring_number || "identificado"}, mas não cadastrado no plantel`;
+        return `${label}: não identificado na foto`;
+      };
+      setAiGenealogyInfo(`${describe("Pai", data.father)}. ${describe("Mãe", data.mother)}. Confira os vínculos antes de salvar.${result.usage ? ` Uso mensal: ${result.usage.used}/${result.usage.limit}.` : ""}`);
+    } catch (error: any) {
+      setAiGenealogyError(error?.message || "Não foi possível analisar a genealogia.");
+    } finally { setAiGenealogyScanning(false); setAiGenealogyFileInputKey((x: number) => x + 1); }
   }
 
   async function checkRingAvailability(value: string) {
@@ -188,12 +233,17 @@ export default function BirdForm({ species, birds, initialBird, canUseAi = false
     {error && <div className="error" role="alert">{error}</div>}
     {!initialBird && (canUseAi ? <section style={{border:"1px solid var(--line)",borderRadius:14,padding:16,marginBottom:18,background:"linear-gradient(135deg,#f3fbf7,#fff)"}}>
       <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",flexWrap:"wrap"}}>
-        <div><strong style={{display:"block",fontSize:15}}>✨ Cadastro Inteligente por Foto</strong><small style={{color:"var(--muted)"}}>Fotografe a plaquinha e deixe a IA preencher os dados que conseguir ler.</small></div>
-        <label className="btn btn-soft" style={{cursor:aiScanning?"wait":"pointer",margin:0,opacity:aiScanning ? 0.65 : 1}}>{aiScanning?"Analisando foto...":"📷 Preencher por foto"}<input key={aiFileInputKey} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={aiScanning} onChange={e=>void scanBirdLabel(e.target.files?.[0])} style={{display:"none"}}/></label>
+        <div><strong style={{display:"block",fontSize:15}}>✨ Cadastro Inteligente por Foto</strong><small style={{color:"var(--muted)"}}>Fotografe a plaquinha para preencher os dados da ave ou reconhecer os pais na genealogia.</small></div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          <label className="btn btn-soft" style={{cursor:aiScanning?"wait":"pointer",margin:0,opacity:aiScanning ? 0.65 : 1}}>{aiScanning?"Analisando...":"📷 Dados da ave"}<input key={aiFileInputKey} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={aiScanning || aiGenealogyScanning} onChange={e=>void scanBirdLabel(e.target.files?.[0])} style={{display:"none"}}/></label>
+          <label className="btn btn-soft" style={{cursor:aiGenealogyScanning?"wait":"pointer",margin:0,opacity:aiGenealogyScanning ? 0.65 : 1}}>{aiGenealogyScanning?"Lendo árvore...":"🌳 Genealogia por foto"}<input key={aiGenealogyFileInputKey} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={aiScanning || aiGenealogyScanning} onChange={e=>void scanGenealogyPhoto(e.target.files?.[0])} style={{display:"none"}}/></label>
+        </div>
       </div>
       {aiScanError&&<p className="error" role="alert" style={{margin:"10px 0 0"}}>{aiScanError}</p>}
       {aiScanInfo&&<p style={{margin:"10px 0 0",fontSize:12,color:"var(--primary-dark)",fontWeight:700}}>{aiScanInfo}</p>}
-      <small style={{display:"block",marginTop:8,color:"var(--muted)"}}>Disponível nos planos Profissional e Lenda. JPG, PNG ou WEBP; a imagem é otimizada automaticamente antes do envio. Confira os dados reconhecidos antes de salvar.</small>
+      {aiGenealogyError&&<p className="error" role="alert" style={{margin:"10px 0 0"}}>{aiGenealogyError}</p>}
+      {aiGenealogyInfo&&<p style={{margin:"10px 0 0",fontSize:12,color:"var(--primary-dark)",fontWeight:700}}>{aiGenealogyInfo}</p>}
+      <small style={{display:"block",marginTop:8,color:"var(--muted)"}}>Disponível nos planos Profissional e Lenda. JPG, PNG ou WEBP; a imagem é otimizada automaticamente antes do envio. Confira os dados e os vínculos reconhecidos antes de salvar.</small>
     </section> : <section style={{border:"1px solid var(--line)",borderRadius:14,padding:16,marginBottom:18,background:"#f8fafc"}}><strong>✨ Cadastro Inteligente por Foto</strong><p style={{fontSize:12,color:"var(--muted)",margin:"6px 0 10px"}}>Economize tempo: fotografe a plaquinha e a IA preenche os dados da ave automaticamente. Recurso disponível nos planos Profissional e Lenda.</p><a className="btn btn-soft" href="/dashboard/assinatura">Conhecer planos</a></section>)}
     <div className="form-grid">
       <div className="field"><label>Nome da ave *</label><input required value={f.name} onChange={e => set("name", e.target.value)} placeholder="Ex.: Thor" /></div>

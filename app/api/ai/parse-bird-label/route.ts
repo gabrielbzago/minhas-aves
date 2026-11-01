@@ -40,9 +40,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Você atingiu o limite de ${limit} leituras por foto neste mês do plano ${plan === "lenda" ? "Lenda" : "Profissional"}.` }, { status: 429 });
     }
 
-    const { data: speciesRows } = await supabase.from("species").select("id,common_name,scientific_name").eq("is_active", true).order("common_name");
-    const speciesCatalog = (speciesRows || []).map((s: any) => ({ id: s.id, nome_popular: s.common_name, nome_cientifico: s.scientific_name }));
-    const prompt = `Você é um especialista em leitura de plaquinhas e fichas de identificação de aves de criatórios brasileiros. Sua tarefa é EXTRAIR E CLASSIFICAR os dados, não apenas copiar rótulos impressos. Leia a imagem inteira, observe a posição dos textos, padrões de códigos e contexto típico de anilhas de aves. Retorne SOMENTE um objeto JSON válido.
+    const mode = body?.mode === "genealogy" ? "genealogy" : "bird";
+    let prompt = "";
+    let speciesCatalog: any[] = [];
+    if (mode === "genealogy") {
+      const { data: birdRows, error: birdsError } = await supabase
+        .from("birds")
+        .select("id,name,sex,ring_number,species_id,status,is_genealogy_reference")
+        .eq("status", "ativo")
+        .eq("is_genealogy_reference", false)
+        .order("name");
+      if (birdsError) {
+        console.error("[Apollo AI] genealogy birds", birdsError);
+        return NextResponse.json({ error: "Não foi possível consultar o plantel para cruzar a genealogia." }, { status: 500 });
+      }
+      const catalog = (birdRows || []).map((b: any) => ({
+        id: b.id, nome: b.name, sexo: b.sex, anilha: b.ring_number || null, especie_id: b.species_id
+      }));
+      prompt = `Você é especialista em ler árvores genealógicas e placas de aves de criatórios brasileiros. Analise a imagem e retorne SOMENTE JSON válido. Extraia os dados dos PAIS da ave principal (pai e mãe), mesmo quando não houver rótulos perfeitos. Não confunda avós com pais: use apenas os indivíduos indicados como pai/mãe da ave identificada. Se a imagem mostrar uma árvore genealógica, localize a ave principal na coluna AVE e os dois indivíduos diretamente ligados na coluna PAIS. Não retorne avós, bisavós ou trisavós como pai/mãe.
+
+Para cada pai/mãe, extraia o nome e a anilha exatamente como aparecem. Os campos podem estar sem rótulos; use posição e contexto. Se não houver informação legível, use null. Não invente nomes, números ou parentesco. O catálogo abaixo contém somente aves já cadastradas neste criatório; compare com os nomes/anilhas visíveis apenas como referência, mas NÃO escolha um ID por aproximação. O servidor fará o vínculo exato. Catálogo do plantel: ${JSON.stringify(catalog)}.
+
+Retorne as chaves: bird_name, father_name, father_ring_number, mother_name, mother_ring_number, notes. Use null para campos ausentes.`;
+    } else {
+      const { data: speciesRows } = await supabase.from("species").select("id,common_name,scientific_name").eq("is_active", true).order("common_name");
+      speciesCatalog = (speciesRows || []).map((s: any) => ({ id: s.id, nome_popular: s.common_name, nome_cientifico: s.scientific_name }));
+      prompt = `Você é um especialista em leitura de plaquinhas e fichas de identificação de aves de criatórios brasileiros. Sua tarefa é EXTRAIR E CLASSIFICAR os dados, não apenas copiar rótulos impressos. Leia a imagem inteira, observe a posição dos textos, padrões de códigos e contexto típico de anilhas de aves. Retorne SOMENTE um objeto JSON válido.
 
 REGRA GERAL: não exija que o campo esteja explicitamente nomeado. Em placas antigas e modernas, os dados podem aparecer sem rótulos como "anilha", "nascimento" ou "IBAMA". Use o padrão visual e o contexto para classificar. Não invente caracteres: quando não conseguir distinguir um caractere, deixe o campo correspondente null em vez de adivinhar.
 
@@ -71,6 +94,7 @@ OUTROS CAMPOS:
 - Para campos ausentes/ilegíveis use null. Não complete informações por suposição. A classificação contextual dos códigos é permitida, mas a invenção de caracteres não.
 
 Examine cuidadosamente números pequenos e sequências alfanuméricas, principalmente linhas sem rótulos entre o nome da ave e a data de nascimento.`;
+    }
     const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -79,7 +103,9 @@ Examine cuidadosamente números pequenos e sequências alfanuméricas, principal
         temperature: 0,
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: "Você é especialista em plaquinhas de criatórios brasileiros. Extraia os caracteres visíveis com máxima atenção e classifique códigos pelo padrão e contexto mesmo sem rótulo. Não invente caracteres nem complete datas ou números ausentes. Diferencie rigorosamente código de anilha de registro regulatório." },
+          { role: "system", content: mode === "genealogy"
+            ? "Você é especialista em leitura de árvores genealógicas de aves. Diferencie pais diretos de avós e ancestrais mais distantes. Não invente parentescos."
+            : "Você é especialista em plaquinhas de criatórios brasileiros. Extraia os caracteres visíveis com máxima atenção e classifique códigos pelo padrão e contexto mesmo sem rótulo. Não invente caracteres nem complete datas ou números ausentes. Diferencie rigorosamente código de anilha de registro regulatório." },
           { role: "user", content: [
             { type: "text", text: prompt },
             { type: "image_url", image_url: { url: `data:${mime};base64,${bytes.toString("base64")}`, detail: "high" } }
@@ -96,6 +122,44 @@ Examine cuidadosamente números pequenos e sequências alfanuméricas, principal
     if (!content) return NextResponse.json({ error: "A IA não conseguiu identificar dados nessa imagem." }, { status: 422 });
     let parsed: any;
     try { parsed = JSON.parse(content); } catch { return NextResponse.json({ error: "Não foi possível interpretar o resultado. Tente novamente." }, { status: 502 }); }
+
+    if (mode === "genealogy") {
+      const { data: plantel, error: plantelError } = await supabase
+        .from("birds")
+        .select("id,name,sex,ring_number,species_id,status,is_genealogy_reference")
+        .eq("status", "ativo")
+        .eq("is_genealogy_reference", false);
+      if (plantelError) return NextResponse.json({ error: "Não foi possível cruzar os nomes e anilhas com o plantel." }, { status: 500 });
+      const normalize = (value: any) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const resolveParent = (name: any, ring: any, requiredSex: "macho" | "femea") => {
+        const n = normalize(name); const r = normalize(ring);
+        if (!n && !r) return { id: null, status: "ausente", name: name || null, ring_number: ring || null };
+        const matches = (plantel || []).filter((bird: any) => {
+          if (bird.sex !== requiredSex) return false;
+          // Anilha é identificador mais forte: se a foto trouxe anilha, não fazemos fallback por nome.
+          if (r) return normalize(bird.ring_number) === r;
+          return !!n && normalize(bird.name) === n;
+        });
+        if (matches.length === 1) return { id: matches[0].id, status: "vinculado", name: matches[0].name, ring_number: matches[0].ring_number || null };
+        if (matches.length > 1) return { id: null, status: "ambiguo", name: name || null, ring_number: ring || null };
+        return { id: null, status: "nao_cadastrado", name: name || null, ring_number: ring || null };
+      };
+      const father = resolveParent(parsed.father_name, parsed.father_ring_number, "macho");
+      const mother = resolveParent(parsed.mother_name, parsed.mother_ring_number, "femea");
+      const { error: usageError } = await supabase.from("ai_bird_scan_usage").insert({ user_id: user.id, usage_month: month });
+      if (usageError) console.error("[Apollo AI] usage insert", usageError);
+      return NextResponse.json({
+        data: {
+          bird_name: typeof parsed.bird_name === "string" ? parsed.bird_name.trim() : "",
+          father_id: father.id,
+          mother_id: mother.id,
+          father,
+          mother,
+          notes: typeof parsed.notes === "string" ? parsed.notes : ""
+        },
+        usage: { used: (count || 0) + 1, limit }
+      });
+    }
 
     const allowedMutations = ["Lutino", "Branco", "Preto", "Canela", "Diluido", "Laranjeira", "Ardesiaca"];
     const species = speciesCatalog.find((s: any) => s.id === parsed.species_id);
