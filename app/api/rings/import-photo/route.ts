@@ -21,8 +21,8 @@ export async function POST(request: Request) {
       const items: Array<{ ring_number: string; mother_ring_number?: string }> = Array.isArray(body.items)
         ? body.items.map((item: any) => ({ ring_number: String(item?.ring_number || "").trim(), mother_ring_number: String(item?.mother_ring_number || "").trim() }))
         : (Array.isArray(body.ringNumbers) ? body.ringNumbers.map((n: unknown) => ({ ring_number: String(n ?? "").trim(), mother_ring_number: "" })) : []);
-      const speciesId = String(body.speciesId || "");
-      if (!speciesId || !items.length || items.length > 300) return NextResponse.json({ error: "Informe a espécie e uma lista válida de até 300 anilhas." }, { status: 400 });
+      if (!items.length || items.length > 300) return NextResponse.json({ error: "Informe uma lista válida de até 300 anilhas." }, { status: 400 });
+      if (items.some((item) => !item.mother_ring_number)) return NextResponse.json({ error: "Informe a anilha da mãe/matriz em cada registro. A espécie será identificada automaticamente pelo cadastro da matriz." }, { status: 422 });
       if (items.some((item) => !item.ring_number || item.ring_number.length > 120)) return NextResponse.json({ error: "Há números vazios ou inválidos. Revise a lista antes de importar." }, { status: 400 });
       const clean = items.map((item) => item.ring_number);
       const unique = new Set(clean.map((n) => n.toLowerCase()));
@@ -32,8 +32,6 @@ export async function POST(request: Request) {
       const duplicates = new Set((existing || []).map((r: any) => String(r.ring_number).toLowerCase()));
       const duplicated = clean.filter((n) => duplicates.has(n.toLowerCase()));
       if (duplicated.length) return NextResponse.json({ error: `Já existem anilhas com estes números: ${duplicated.slice(0, 12).join(", ")}${duplicated.length > 12 ? "…" : ""}. Remova-as da lista para continuar.`, duplicates: duplicated }, { status: 409 });
-      const { data: species } = await supabase.from("species").select("id").eq("id", speciesId).eq("is_active", true).maybeSingle();
-      if (!species) return NextResponse.json({ error: "A espécie selecionada não está disponível no catálogo." }, { status: 400 });
       const motherNumbers: string[] = [...new Set(items.map((item) => item.mother_ring_number).filter((number): number is string => typeof number === "string" && number.trim().length > 0))];
       const motherByRing = new Map<string, any>();
       if (motherNumbers.length) {
@@ -42,12 +40,17 @@ export async function POST(request: Request) {
         (mothers || []).forEach((bird: any) => motherByRing.set(String(bird.ring_number).trim().toLowerCase(), bird));
         const unresolved = motherNumbers.filter((number) => !motherByRing.has(number.toLowerCase()));
         if (unresolved.length) return NextResponse.json({ error: `Não encontrei estas anilhas de mãe no plantel: ${unresolved.join(", ")}. Confira os números ou cadastre as matrizes antes de importar.` , unresolvedMothers: unresolved }, { status: 422 });
-        const invalid = motherNumbers.filter((number) => { const bird = motherByRing.get(number.toLowerCase()); return bird.sex !== "femea" || (bird.species_id && bird.species_id !== speciesId); });
-        if (invalid.length) return NextResponse.json({ error: `Estas matrizes não estão cadastradas como fêmeas da espécie selecionada: ${invalid.join(", ")}.` }, { status: 422 });
+        const invalid = motherNumbers.filter((number) => {
+          const bird = motherByRing.get(number.toLowerCase());
+          return bird.sex !== "femea" || !bird.species_id;
+        });
+        if (invalid.length) return NextResponse.json({ error: `Estas matrizes precisam estar cadastradas como fêmeas e ter espécie definida: ${invalid.join(", ")}.` }, { status: 422 });
       }
-      const defaultMotherId = body.motherId || null;
       const fatherId = body.fatherId || null;
-      const rows = items.map((item) => ({ user_id: user.id, ring_number: item.ring_number, species_id: speciesId, father_id: fatherId, mother_id: item.mother_ring_number ? motherByRing.get(item.mother_ring_number.toLowerCase())?.id : defaultMotherId, notes: String(body.notes || "Importado por foto em lote").slice(0, 1000), sex: "indeterminado", status: "disponivel" }));
+      const rows = items.map((item) => {
+        const mother = motherByRing.get(item.mother_ring_number.toLowerCase());
+        return { user_id: user.id, ring_number: item.ring_number, species_id: mother.species_id, father_id: fatherId, mother_id: mother.id, notes: String(body.notes || "Importado por foto em lote").slice(0, 1000), sex: "indeterminado", status: "disponivel" };
+      });
       const { data, error } = await supabase.from("ring_inventory").insert(rows).select("id,ring_number,mother_id");
       if (error) { console.error("[Apollo] ring batch database insert", error); return NextResponse.json({ error: error.message?.includes("duplicate") ? "Um ou mais números já estão cadastrados." : `Falha ao gravar no banco: ${error.message || "erro não identificado"}` }, { status: 400 }); }
       if (!data || data.length !== clean.length) return NextResponse.json({ error: `Gravação incompleta: foram confirmadas ${data?.length || 0} de ${clean.length} anilhas.` }, { status: 500 });
