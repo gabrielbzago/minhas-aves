@@ -93,7 +93,27 @@ export default function ModuleManager({module,birds,initialRecords,canImport,vet
    const topFemales=[...femaleStats.values()].filter(x=>x.posturas>0).sort((a,b)=>b.eggs-a.eggs||b.posturas-a.posturas).slice(0,8);
    const max=(arr:any[])=>Math.max(1,...arr.map(x=>x[1]));
    const panelCard={background:"#fff",border:"1px solid #e4ece7",borderRadius:16,padding:18,minWidth:0,boxShadow:"0 4px 16px rgba(24,62,44,.04)"} as any;
-   const barList=(title:string,arr:any[],color:string,empty:string)=><section style={panelCard}><h3 style={{margin:"0 0 14px",fontSize:16}}>{title}</h3>{arr.length?arr.slice(0,10).map(([name,count]:any)=><div key={name} style={{marginBottom:12}}><div style={{display:"flex",justifyContent:"space-between",gap:10,fontSize:13,marginBottom:5}}><strong style={{fontWeight:600}}>{name}</strong><b>{count}</b></div><div style={{height:9,borderRadius:20,background:"#edf2ef",overflow:"hidden"}><div style={{height:"100%",width:`${count/max(arr)*100}%`,background:color,borderRadius:20}}/></div></div>):<p style={{color:"#718078",fontSize:13,margin:0}}>{empty}</p>}</section>;
+   const barList=(title:string,arr:any[],color:string,empty:string)=>(
+    <section style={panelCard}>
+     <h3 style={{margin:"0 0 14px",fontSize:16}}>{title}</h3>
+     {arr.length > 0 ? (
+      arr.slice(0,10).map((item:any)=>{
+       const name=item[0];
+       const count=Number(item[1]) || 0;
+       const largest=Math.max(1,...arr.map((entry:any)=>Number(entry[1])||0));
+       const percentage=Math.min(100,Math.max(0,(count/largest)*100));
+       return (
+        <div key={String(name)} style={{marginBottom:12}}>
+         <div style={{display:"flex",justifyContent:"space-between",gap:10,fontSize:13,marginBottom:5}}><strong style={{fontWeight:600}}>{name}</strong><b>{count}</b></div>
+         <div style={{height:9,borderRadius:20,background:"#edf2ef",overflow:"hidden"}}><div style={{height:"100%",width:`${percentage}%`,background:color,borderRadius:20}} /></div>
+        </div>
+       );
+      })
+     ) : (
+      <p style={{color:"#718078",fontSize:13,margin:0}}>{empty}</p>
+     )}
+    </section>
+   );
    return <div className="module-manager" style={{display:"grid",gap:18}}>
     <div className="stat-grid"><div className="stat"><small>🐦 Aves cadastradas</small><strong>{total}</strong><span className="stat-foot">Plantel completo</span></div><div className="stat"><small>♂ Machos</small><strong>{males}</strong><span className="stat-foot">{total?Math.round(males/total*100):0}% do plantel</span></div><div className="stat"><small>♀ Fêmeas</small><strong>{females}</strong><span className="stat-foot">{total?Math.round(females/total*100):0}% do plantel</span></div><div className="stat"><small>❔ Sexo indefinido</small><strong>{undefinedSex}</strong><span className="stat-foot">Aguardando identificação</span></div><div className="stat"><small>🏷 Com anilha</small><strong>{rings}</strong><span className="stat-foot">{total?Math.round(rings/total*100):0}% identificadas</span></div><div className="stat"><small>🌿 Matrizes</small><strong>{matrices}</strong><span className="stat-foot">Marcadas no plantel</span></div></div>
     <section style={panelCard}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap"}}><div><span style={{fontSize:11,fontWeight:800,letterSpacing:1,color:"#32845f"}}>VISÃO GERAL</span><h3 style={{margin:"4px 0",fontSize:18}}>Composição do criatório</h3><p style={{margin:0,color:"#718078",fontSize:13}}>Distribuição por sexo e situação cadastral.</p></div><Link className="btn btn-soft" href="/dashboard/plantel">Abrir plantel</Link></div><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:18,marginTop:18}}><div><div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:7}}><b>Machos</b><span>{males}</span></div><div style={{height:12,background:"#edf2ef",borderRadius:20,overflow:"hidden"}><div style={{height:"100%",width:`${total?males/total*100:0}%`,background:"#6da8ee"}}/></div><div style={{display:"flex",justifyContent:"space-between",fontSize:13,margin:"12px 0 7px"}}><b>Fêmeas</b><span>{females}</span></div><div style={{height:12,background:"#edf2ef",borderRadius:20,overflow:"hidden"}><div style={{height:"100%",width:`${total?females/total*100:0}%`,background:"#ec8eb5"}}/></div><div style={{display:"flex",justifyContent:"space-between",fontSize:13,margin:"12px 0 7px"}}><b>Indefinidos</b><span>{undefinedSex}</span></div><div style={{height:12,background:"#edf2ef",borderRadius:20,overflow:"hidden"}><div style={{height:"100%",width:`${total?undefinedSex/total*100:0}%`,background:"#aab6b0"}}/></div></div><div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:10}}><div style={{background:"#f4f8f5",borderRadius:12,padding:13}}><small style={{color:"#718078"}}>Aves ativas</small><div style={{fontSize:25,fontWeight:800}}>{active}</div></div><div style={{background:"#f4f8f5",borderRadius:12,padding:13}}><small style={{color:"#718078"}}>Sem anilha</small><div style={{fontSize:25,fontWeight:800}}>{Math.max(0,total-rings)}</div></div></div></div></section>
