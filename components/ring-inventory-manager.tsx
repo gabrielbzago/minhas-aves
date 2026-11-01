@@ -145,39 +145,11 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
     if(repeated.length){setBatchError(`Existem números repetidos na revisão: ${[...new Set(repeated.map(x=>x.ring_number))].slice(0,8).join(", ")}. Corrija antes de continuar.`);return;}
     setBatchBusy(true);setBatchError("");setBatchSaved(false);setBatchSavedCount(0);setBatchMessage("Gravando as anilhas no estoque. Não feche esta tela...");
     try{
-      const {data:auth,error:authError}=await client.auth.getUser();
-      if(authError||!auth.user)throw new Error("Sua sessão expirou. Entre novamente no Apollo e tente salvar o lote.");
-      const selectedSpecies=species.find((sp:any)=>sp.id===batchSpecies);
-      if(!selectedSpecies)throw new Error("A espécie selecionada não está mais disponível. Atualize a tela e selecione novamente.");
-      const normalized=(value:string)=>value.trim().toLocaleLowerCase("pt-BR");
-      const motherIds=new Map<string,string>();
-      for(const item of items){
-        if(!item.mother_ring_number)continue;
-        const mother=birds.find((bird:any)=>normalized(String(bird.ring_number||""))===normalized(item.mother_ring_number));
-        if(!mother)throw new Error(`A matriz ${item.mother_ring_number} não foi encontrada no seu plantel. Corrija o número ou cadastre a matriz antes de continuar.`);
-        if(String(mother.sex||"").toLowerCase()!=="femea")throw new Error(`A anilha ${item.mother_ring_number} não pertence a uma ave cadastrada como fêmea.`);
-        if(mother.species_id&&mother.species_id!==batchSpecies)throw new Error(`A matriz ${item.mother_ring_number} pertence a outra espécie. Selecione a espécie correta ou corrija o vínculo.`);
-        motherIds.set(normalized(item.mother_ring_number),mother.id);
-      }
-      const cleanNumbers=items.map(item=>item.ring_number);
-      const {data:existing,error:existingError}=await client.from("ring_inventory").select("ring_number").eq("user_id",auth.user.id).in("ring_number",cleanNumbers);
-      if(existingError)throw new Error(friendlySupabaseError(existingError,"Não foi possível verificar se já existem anilhas com esses números."));
-      const existingSet=new Set((existing||[]).map((row:any)=>normalized(String(row.ring_number||""))));
-      const duplicates=cleanNumbers.filter(number=>existingSet.has(normalized(number)));
-      if(duplicates.length)throw new Error(`Estas anilhas já estão cadastradas no estoque: ${duplicates.slice(0,10).join(", ")}. Remova os números repetidos antes de salvar.`);
-      const rowsToInsert=items.map(item=>({
-        user_id:auth.user.id,
-        ring_number:item.ring_number,
-        species_id:batchSpecies,
-        father_id:batchFather||null,
-        mother_id:item.mother_ring_number?motherIds.get(normalized(item.mother_ring_number))||null:batchMother||null,
-        notes:String(batchNotes||"Importado por foto em lote").slice(0,1000),
-        sex:"indeterminado",
-        status:"disponivel"
-      }));
-      const {data:saved,error:saveError}=await client.from("ring_inventory").insert(rowsToInsert).select("id,ring_number,mother_id");
-      if(saveError)throw new Error(friendlySupabaseError(saveError,"O Apollo não conseguiu gravar o lote. Confira se os números já existem e se os vínculos de pai e mãe são válidos."));
-      const savedCount=saved?.length||rowsToInsert.length;
+      const response=await fetch("/api/rings/import-photo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"import",items,speciesId:batchSpecies,fatherId:batchFather||null,motherId:batchMother||null,notes:batchNotes||"Importado por foto em lote"})});
+      const raw=await response.text();let result:any={};try{result=raw?JSON.parse(raw):{};}catch{throw new Error(`O servidor respondeu de forma inesperada (HTTP ${response.status}). Confira os logs da Vercel.`);}
+      if(!response.ok)throw new Error(result.error||`Falha ao gravar as anilhas (HTTP ${response.status}).`);
+      const savedCount=Number(result.imported||result.data?.length||0);
+      if(!result.success||savedCount!==items.length)throw new Error(`O servidor não confirmou a gravação de todas as anilhas. Identificadas: ${items.length}; confirmadas: ${savedCount}. Nenhuma confirmação foi exibida.`);
       setBatchSavedCount(savedCount);setBatchSaved(true);
       setBatchMessage("");
       setBatchRows([]);setBatchImage(null);setBatchUncertain([]);setBatchFather("");setBatchMother("");
@@ -260,7 +232,7 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
     <div className="form-card" style={{marginTop:16}}>
       <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",flexWrap:"wrap"}}><h3>Estoque e histórico</h3><strong>{available.length} disponível(is)</strong></div>
       <div className="form-grid"><div className="field"><label>Buscar</label><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Número, espécie ou observação"/></div><div className="field"><label>Exibir</label><select value={filter} onChange={e=>setFilter(e.target.value)}><option value="todos">Todas</option><option value="disponivel">Disponíveis</option><option value="aplicada">Aplicadas</option><option value="cancelada">Canceladas</option></select></div></div>
-      {loading?<div className="empty">Carregando estoque...</div>:filtered.length===0?<div className="empty">Nenhuma anilha encontrada.</div>:<div className="record-list">{filtered.map(r=><article className="record" key={r.id}><div style={{flex:1}}><strong>{r.ring_number}</strong><small>{r.species?.common_name||"Espécie não informada"} · {r.status==="disponivel"?"Disponível":r.status==="aplicada"?"Aplicada":"Cancelada"}{r.applied_bird?.name?` · ${r.applied_bird.name}`:""}</small><p>{r.father?.name?`Pai: ${r.father.name} `:""}{r.mother?.name?`Mãe: ${r.mother.name} `:""}{r.notes||""}</p><div style={{display:"flex",alignItems:"end",gap:8,flexWrap:"wrap",marginTop:10}}><div className="field" style={{maxWidth:220,flex:1}}><label>Sexo do filhote</label><select value={sexDrafts[r.id]??(r.sex||"indeterminado")} disabled={busy} onChange={e=>setSexDrafts(current=>({...current,[r.id]:e.target.value}))}><option value="indeterminado">Indefinido</option><option value="macho">Macho</option><option value="femea">Fêmea</option></select></div><button type="button" className="btn btn-primary" disabled={busy||!sexDrafts[r.id]||sexDrafts[r.id]===(r.sex||"indeterminado")} onClick={()=>saveSex(r.id)}>{busy?"Salvando...":"Salvar sexo"}</button></div><div style={{display:"flex",alignItems:"end",gap:8,flexWrap:"wrap",marginTop:10}}><div className="field" style={{maxWidth:340,flex:1}}><label>Mãe/matriz vinculada</label><select value={motherDrafts[r.id]??(r.mother_id||"")} disabled={busy} onChange={e=>setMotherDrafts(current=>({...current,[r.id]:e.target.value}))}><option value="">Não vinculada</option>{birds.filter((b:any)=>b.sex==="femea"&&(!r.species_id||b.species_id===r.species_id)).map((b:any)=><option key={b.id} value={b.id}>{b.name} · {b.ring_number||"sem anilha"}</option>)}</select></div><button type="button" className="btn btn-soft" disabled={busy||(motherDrafts[r.id]??(r.mother_id||""))===(r.mother_id||"")} onClick={()=>saveMother(r.id)}>{busy?"Salvando...":"Salvar matriz"}</button></div></div>{r.status==="disponivel"&&<button className="btn btn-danger" onClick={()=>remove(r.id)}>Excluir</button>}</article>)}</div>}
+      {loading?<div className="empty">Carregando estoque...</div>:filtered.length===0?<div className="empty">Nenhuma anilha encontrada.</div>:<div className="record-list">{filtered.map(r=><article className="record" key={r.id}><div style={{flex:1}}><strong>{r.ring_number}</strong><small>{r.species?.common_name||"Espécie não informada"} · {r.status==="disponivel"?"Disponível":r.status==="aplicada"?"Aplicada":"Cancelada"}{r.applied_bird?.name?` · ${r.applied_bird.name}`:""}</small><p>{r.father?.name?`Pai: ${r.father.name} `:""}{r.mother?.name?`Mãe: ${r.mother.name} `:""}{r.notes||""}</p><div style={{display:"flex",alignItems:"end",gap:8,flexWrap:"wrap",marginTop:10}}>{r.status==="disponivel"?<div className="field" style={{maxWidth:220,flex:1}}><label>Sexo da anilha em estoque</label><input value="Indefinido — será definido ao aplicar" disabled readOnly /></div>:<><div className="field" style={{maxWidth:220,flex:1}}><label>Sexo do filhote</label><select value={sexDrafts[r.id]??(r.sex||"indeterminado")} disabled={busy} onChange={e=>setSexDrafts(current=>({...current,[r.id]:e.target.value}))}><option value="indeterminado">Indefinido</option><option value="macho">Macho</option><option value="femea">Fêmea</option></select></div><button type="button" className="btn btn-primary" disabled={busy||!sexDrafts[r.id]||sexDrafts[r.id]===(r.sex||"indeterminado")} onClick={()=>saveSex(r.id)}>{busy?"Salvando...":"Salvar sexo"}</button></>}</div><div style={{display:"flex",alignItems:"end",gap:8,flexWrap:"wrap",marginTop:10}}><div className="field" style={{maxWidth:340,flex:1}}><label>Mãe/matriz vinculada</label><select value={motherDrafts[r.id]??(r.mother_id||"")} disabled={busy} onChange={e=>setMotherDrafts(current=>({...current,[r.id]:e.target.value}))}><option value="">Não vinculada</option>{birds.filter((b:any)=>b.sex==="femea"&&(!r.species_id||b.species_id===r.species_id)).map((b:any)=><option key={b.id} value={b.id}>{b.name} · {b.ring_number||"sem anilha"}</option>)}</select></div><button type="button" className="btn btn-soft" disabled={busy||(motherDrafts[r.id]??(r.mother_id||""))===(r.mother_id||"")} onClick={()=>saveMother(r.id)}>{busy?"Salvando...":"Salvar matriz"}</button></div></div>{r.status==="disponivel"&&<button className="btn btn-danger" onClick={()=>remove(r.id)}>Excluir</button>}</article>)}</div>}
     </div>
   </div>;
 }

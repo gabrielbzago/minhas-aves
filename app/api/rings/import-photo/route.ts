@@ -49,8 +49,9 @@ export async function POST(request: Request) {
       const fatherId = body.fatherId || null;
       const rows = items.map((item) => ({ user_id: user.id, ring_number: item.ring_number, species_id: speciesId, father_id: fatherId, mother_id: item.mother_ring_number ? motherByRing.get(item.mother_ring_number.toLowerCase())?.id : defaultMotherId, notes: String(body.notes || "Importado por foto em lote").slice(0, 1000), sex: "indeterminado", status: "disponivel" }));
       const { data, error } = await supabase.from("ring_inventory").insert(rows).select("id,ring_number,mother_id");
-      if (error) return NextResponse.json({ error: error.message?.includes("duplicate") ? "Um ou mais números já estão cadastrados." : "Não foi possível gravar o lote. Confira espécie e vínculos de pai/mãe." }, { status: 400 });
-      return NextResponse.json({ success: true, imported: data?.length || clean.length, data: data || [] });
+      if (error) { console.error("[Apollo] ring batch database insert", error); return NextResponse.json({ error: error.message?.includes("duplicate") ? "Um ou mais números já estão cadastrados." : `Falha ao gravar no banco: ${error.message || "erro não identificado"}` }, { status: 400 }); }
+      if (!data || data.length !== clean.length) return NextResponse.json({ error: `Gravação incompleta: foram confirmadas ${data?.length || 0} de ${clean.length} anilhas.` }, { status: 500 });
+      return NextResponse.json({ success: true, imported: data.length, data: data || [] });
     }
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) return NextResponse.json({ error: "A leitura por IA ainda não está configurada." }, { status: 503 });
