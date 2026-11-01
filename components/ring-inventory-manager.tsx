@@ -31,6 +31,7 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
   const [batchError,setBatchError]=useState("");
   const [batchSaved,setBatchSaved]=useState(false);
   const [batchSavedCount,setBatchSavedCount]=useState(0);
+  const [batchProgress,setBatchProgress]=useState({done:0,total:0});
   const client=createClient();
   async function load(){
     setLoading(true);setError("");
@@ -143,19 +144,41 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
     const seen=new Set<string>();
     const repeated=items.filter(item=>{const key=item.ring_number.toLowerCase();if(seen.has(key))return true;seen.add(key);return false;});
     if(repeated.length){setBatchError(`Existem números repetidos na revisão: ${[...new Set(repeated.map(x=>x.ring_number))].slice(0,8).join(", ")}. Corrija antes de continuar.`);return;}
-    setBatchBusy(true);setBatchError("");setBatchSaved(false);setBatchSavedCount(0);setBatchMessage("Gravando as anilhas no estoque. Não feche esta tela...");
+    setBatchBusy(true);setBatchError("");setBatchSaved(false);setBatchSavedCount(0);setBatchProgress({done:0,total:items.length});
+    setBatchMessage(`Salvando 0/${items.length} anilhas...`);
+    const failed:Array<{item:{ring_number:string;mother_ring_number:string};reason:string}>=[];
+    let saved=0;
     try{
-      const response=await fetch("/api/rings/import-photo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"import",items,speciesId:batchSpecies,fatherId:batchFather||null,motherId:batchMother||null,notes:batchNotes||"Importado por foto em lote"})});
-      const raw=await response.text();let result:any={};try{result=raw?JSON.parse(raw):{};}catch{throw new Error(`O servidor respondeu de forma inesperada (HTTP ${response.status}). Confira os logs da Vercel.`);}
-      if(!response.ok)throw new Error(result.error||`Falha ao gravar as anilhas (HTTP ${response.status}).`);
-      const savedCount=Number(result.imported||result.data?.length||0);
-      if(!result.success||savedCount!==items.length)throw new Error(`O servidor não confirmou a gravação de todas as anilhas. Identificadas: ${items.length}; confirmadas: ${savedCount}. Nenhuma confirmação foi exibida.`);
-      setBatchSavedCount(savedCount);setBatchSaved(true);
-      setBatchMessage("");
-      setBatchRows([]);setBatchImage(null);setBatchUncertain([]);setBatchFather("");setBatchMother("");
-      if(batchFileInput.current)batchFileInput.current.value="";
-      await load();
-    }catch(e:any){setBatchSaved(false);setBatchSavedCount(0);setBatchMessage("");setBatchError(e?.message||"Não foi possível gravar o lote. Tente novamente.");}
+      // Cada anilha é enviada e confirmada em uma requisição independente.
+      // Assim, um registro com problema não impede os demais de serem gravados.
+      for(let index=0;index<items.length;index++){
+        const item=items[index];
+        setBatchMessage(`Salvando ${index+1}/${items.length}: ${item.ring_number}...`);
+        try{
+          const response=await fetch("/api/rings/import-photo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"import",items:[item],speciesId:batchSpecies,fatherId:batchFather||null,motherId:batchMother||null,notes:batchNotes||"Importado por foto em lote"})});
+          const raw=await response.text();let result:any={};
+          try{result=raw?JSON.parse(raw):{};}catch{throw new Error(`Resposta inválida do servidor (HTTP ${response.status}).`);}
+          if(!response.ok)throw new Error(result.error||`Erro HTTP ${response.status}.`);
+          const confirmed=Number(result.imported||result.data?.length||0);
+          if(!result.success||confirmed!==1)throw new Error(`O servidor não confirmou esta anilha (confirmadas: ${confirmed}).`);
+          saved++;
+        }catch(e:any){failed.push({item,reason:e?.message||"Falha desconhecida ao salvar."});}
+        setBatchProgress({done:index+1,total:items.length});
+        setBatchMessage(`Salvando ${index+1}/${items.length} · ${saved} gravada(s)...`);
+      }
+      if(failed.length===0){
+        setBatchSavedCount(saved);setBatchSaved(true);setBatchMessage("");
+        setBatchRows([]);setBatchImage(null);setBatchUncertain([]);setBatchFather("");setBatchMother("");
+        if(batchFileInput.current)batchFileInput.current.value="";
+        await load();
+      }else{
+        setBatchRows(failed.map(entry=>entry.item));
+        setBatchSaved(false);setBatchSavedCount(saved);
+        setBatchMessage(saved>0?`${saved} de ${items.length} anilhas foram salvas. ${failed.length} precisam de correção ou nova tentativa.`:`Nenhuma das ${items.length} anilhas foi confirmada no banco.`);
+        setBatchError(failed.slice(0,8).map(entry=>`${entry.item.ring_number}: ${entry.reason}`).join("\n")+(failed.length>8?`\nE mais ${failed.length-8} erro(s).`:""));
+        if(saved>0)await load();
+      }
+    }catch(e:any){setBatchSaved(false);setBatchMessage("");setBatchError(e?.message||"Não foi possível concluir a gravação do lote.");}
     finally{setBatchBusy(false);}
   }
 
@@ -207,7 +230,7 @@ export default function RingInventoryManager({birds=[],species=[]}:{birds:any[];
       <div className="form-actions" style={{alignItems:"center",flexWrap:"wrap"}}><button type="button" className="btn btn-secondary" disabled={batchBusy} onClick={()=>batchFileInput.current?.click()}>📷 Tirar foto da lista</button><button type="button" className="btn btn-primary" disabled={batchBusy} onClick={()=>{void readBatchPhoto();}}>{batchBusy?"Processando foto...":"Ler lista com IA"}</button><small style={{display:"block",width:"100%",marginTop:6,color:"var(--muted,#64748b)"}}>{!batchImage?"Primeiro escolha a foto; depois clique em Ler lista com IA.":batchBusy?"Aguarde: a imagem está sendo enviada e analisada.":"Foto selecionada. Clique em Ler lista com IA para iniciar a leitura."}</small></div>
       {batchError&&<div className="error" role="alert" style={{marginTop:12}}>{batchError}</div>}{batchMessage&&<p role="status" style={{marginTop:12,color:"var(--success,#16834a)"}}>{batchMessage}</p>}
       {batchUncertain.length>0&&<div style={{marginTop:10,padding:12,borderRadius:10,background:"var(--surface-secondary,#f4f6f4)"}}><strong>Linhas que precisam de conferência</strong><ul>{batchUncertain.map((v,i)=><li key={i}>{v}</li>)}</ul></div>}
-      {batchRows.length>0&&<div style={{marginTop:14}}><div style={{display:"flex",justifyContent:"space-between",gap:8,flexWrap:"wrap",alignItems:"center"}}><strong>Revise os números identificados ({batchRows.length})</strong><small>Todos começam como disponíveis e sexo indefinido.</small></div><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:8,marginTop:10}}>{batchRows.map((item,i)=><div key={i} className="field" style={{border:"1px solid var(--border,#e5e7eb)",borderRadius:10,padding:10}}><label>Anilha do estoque {i+1}</label><input value={item.ring_number} onChange={e=>setBatchRows(rows=>rows.map((v,j)=>j===i?{...v,ring_number:e.target.value}:v))}/><label style={{marginTop:8}}>Anilha da mãe/matriz (opcional)</label><input value={item.mother_ring_number} placeholder="Número da anilha da mãe na lista" onChange={e=>setBatchRows(rows=>rows.map((v,j)=>j===i?{...v,mother_ring_number:e.target.value}:v))}/>{item.mother_ring_number&&<small style={{color:birds.some((b:any)=>String(b.ring_number||"").trim().toLowerCase()===item.mother_ring_number.trim().toLowerCase()&&b.sex==="femea")?"var(--success,#16834a)":"var(--muted,#64748b)"}}>{(()=>{const m=birds.find((b:any)=>String(b.ring_number||"").trim().toLowerCase()===item.mother_ring_number.trim().toLowerCase()&&b.sex==="femea");return m?`Matriz encontrada: ${m.name}`:"A matriz será conferida no plantel ao cadastrar"})()}</small>}</div>)}</div><div className="form-actions">{batchSaved?<div role="status" aria-live="polite" style={{width:"100%",padding:"14px 16px",borderRadius:10,border:"1px solid #86c99b",background:"#edf9f0",color:"#176b35",fontWeight:700}}><span style={{display:"block",fontSize:16}}>✓ Dados salvos com sucesso!</span><span style={{display:"block",fontSize:13,fontWeight:500,marginTop:4}}>{batchSavedCount} anilha(s) gravada(s) no estoque. O botão Salvar dados foi removido porque o cadastro foi concluído.</span></div>:<><button type="button" className="btn btn-primary" disabled={batchBusy||!batchRows.some(item=>item.ring_number.trim())} onClick={(event)=>{event.preventDefault();event.stopPropagation();void importBatch();}}>{batchBusy?"Salvando dados...":`Salvar dados · ${batchRows.length} anilha(s)`}</button><button type="button" className="btn btn-secondary" disabled={batchBusy} onClick={()=>{setBatchRows([]);setBatchMessage("");setBatchError("");}}>Descartar leitura</button><small style={{width:"100%",color:"var(--muted,#64748b)"}}>{!batchSpecies?"Selecione a espécie antes de salvar; o sistema avisará se faltar alguma informação.":"Confira os números e toque em Salvar dados. Após gravar, aparecerá a confirmação nesta tela."}</small></>}</div></div>}
+      {batchRows.length>0&&<div style={{marginTop:14}}><div style={{display:"flex",justifyContent:"space-between",gap:8,flexWrap:"wrap",alignItems:"center"}}><strong>Revise os números identificados ({batchRows.length})</strong><small>Todos começam como disponíveis e sexo indefinido.</small></div><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:8,marginTop:10}}>{batchRows.map((item,i)=><div key={i} className="field" style={{border:"1px solid var(--border,#e5e7eb)",borderRadius:10,padding:10}}><label>Anilha do estoque {i+1}</label><input value={item.ring_number} onChange={e=>setBatchRows(rows=>rows.map((v,j)=>j===i?{...v,ring_number:e.target.value}:v))}/><label style={{marginTop:8}}>Anilha da mãe/matriz (opcional)</label><input value={item.mother_ring_number} placeholder="Número da anilha da mãe na lista" onChange={e=>setBatchRows(rows=>rows.map((v,j)=>j===i?{...v,mother_ring_number:e.target.value}:v))}/>{item.mother_ring_number&&<small style={{color:birds.some((b:any)=>String(b.ring_number||"").trim().toLowerCase()===item.mother_ring_number.trim().toLowerCase()&&b.sex==="femea")?"var(--success,#16834a)":"var(--muted,#64748b)"}}>{(()=>{const m=birds.find((b:any)=>String(b.ring_number||"").trim().toLowerCase()===item.mother_ring_number.trim().toLowerCase()&&b.sex==="femea");return m?`Matriz encontrada: ${m.name}`:"A matriz será conferida no plantel ao cadastrar"})()}</small>}</div>)}</div><div className="form-actions">{batchSaved?<div role="status" aria-live="polite" style={{width:"100%",padding:"14px 16px",borderRadius:10,border:"1px solid #86c99b",background:"#edf9f0",color:"#176b35",fontWeight:700}}><span style={{display:"block",fontSize:16}}>✓ Dados salvos com sucesso!</span><span style={{display:"block",fontSize:13,fontWeight:500,marginTop:4}}>{batchSavedCount} anilha(s) gravada(s) no estoque. O botão Salvar dados foi removido porque o cadastro foi concluído.</span></div>:<><button type="button" className="btn btn-primary" disabled={batchBusy||!batchRows.some(item=>item.ring_number.trim())} onClick={(event)=>{event.preventDefault();event.stopPropagation();void importBatch();}}>{batchBusy?`Salvando ${batchProgress.done}/${batchProgress.total}...`:`Salvar dados · ${batchRows.length} anilha(s)`}</button><button type="button" className="btn btn-secondary" disabled={batchBusy} onClick={()=>{setBatchRows([]);setBatchMessage("");setBatchError("");}}>Descartar leitura</button><small style={{width:"100%",color:"var(--muted,#64748b)"}}>{!batchSpecies?"Selecione a espécie antes de salvar; o sistema avisará se faltar alguma informação.":"Confira os números e toque em Salvar dados. Após gravar, aparecerá a confirmação nesta tela."}</small></>}</div></div>}
     </section>}
     <div className="form-card" style={{marginTop:16}}>
       <h3>Cadastrar anilha no estoque</h3>
