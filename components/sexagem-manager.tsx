@@ -34,10 +34,19 @@ export default function SexagemManager({ birds = [] }: { birds: any[] }) {
   }
   useEffect(() => { void load(); }, []);
 
-  const setDraft = (id: string, key: string, value: string) => setDrafts(current => ({
-    ...current,
-    [id]: { name: `Filhote ${rings.find(r => r.id === id)?.ring_number || ""}`, birth_date: "", father_id: rings.find(r => r.id === id)?.father_id || "", mother_id: rings.find(r => r.id === id)?.mother_id || "", ...current[id], [key]: value }
-  }));
+  const setDraft = (id: string, key: string, value: string) => setDrafts(current => {
+    const ring = rings.find(r => r.id === id);
+    const previous = current[id];
+    const next = {
+      name: previous?.name ?? `Filhote ${ring?.ring_number || ""}`,
+      birth_date: previous?.birth_date ?? "",
+      father_id: previous?.father_id ?? ring?.father_id ?? "",
+      mother_id: previous?.mother_id ?? ring?.mother_id ?? "",
+      ...previous,
+      [key]: value,
+    };
+    return { ...current, [id]: next };
+  });
   const undefinedRings = rings;
   const available = undefinedRings.filter(r => r.status === "disponivel");
   const born = undefinedRings.filter(r => r.status === "aplicada");
