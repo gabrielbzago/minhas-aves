@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     }
     const body = await request.json();
     if (body?.action === "import") {
-      const items: Array<{ ring_number: string; mother_ring_number?: string }> = Array.isArray(body.items)
+      const items: Array<{ ring_number: string; mother_ring_number: string }> = Array.isArray(body.items)
         ? body.items.map((item: any) => ({ ring_number: String(item?.ring_number || "").trim(), mother_ring_number: String(item?.mother_ring_number || "").trim() }))
         : (Array.isArray(body.ringNumbers) ? body.ringNumbers.map((n: unknown) => ({ ring_number: String(n ?? "").trim(), mother_ring_number: "" })) : []);
       if (!items.length || items.length > 300) return NextResponse.json({ error: "Informe uma lista válida de até 300 anilhas." }, { status: 400 });
@@ -48,7 +48,9 @@ export async function POST(request: Request) {
       }
       const fatherId = body.fatherId || null;
       const rows = items.map((item) => {
-        const mother = motherByRing.get(item.mother_ring_number.toLowerCase());
+        const motherNumber = item.mother_ring_number.trim().toLowerCase();
+        const mother = motherByRing.get(motherNumber);
+        if (!mother) throw new Error(`Matriz não encontrada para a anilha ${item.ring_number}.`);
         return { user_id: user.id, ring_number: item.ring_number, species_id: mother.species_id, father_id: fatherId, mother_id: mother.id, notes: String(body.notes || "Importado por foto em lote").slice(0, 1000), sex: "indeterminado", status: "disponivel" };
       });
       const { data, error } = await supabase.from("ring_inventory").insert(rows).select("id,ring_number,mother_id");
