@@ -56,3 +56,7 @@ Webhook recomendado:
 - charge.dispute.created
 
 O webhook deve apontar para `/api/stripe/webhook`.
+
+
+## Versão 0.5.75
+- Corrigida a visibilidade do card “Distribuição por espécie” no dashboard desktop. O card agora é exibido por padrão em telas desktop e permanece responsivo em dispositivos móveis.

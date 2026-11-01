@@ -260,3 +260,7 @@ O sistema impede o cadastro/reutilização de um número de anilha já utilizado
 
 
 Versão 0.5.72: importação de anilhas por foto reconhece coluna de anilha-mãe e vincula automaticamente à matriz cadastrada pelo número da anilha. Números de mãe não encontrados ou com sexo/espécie incompatíveis impedem a gravação para evitar vínculos incorretos.
+
+
+## Versão 0.5.75
+- Corrigida a visibilidade do card “Distribuição por espécie” no dashboard desktop. O card agora é exibido por padrão em telas desktop e permanece responsivo em dispositivos móveis.

@@ -923,7 +923,7 @@ body{background:var(--bg);color:var(--text)}
 
 
 /* Dashboard: distribuição por espécie */
-.dashboard-species-card{display:none;background:#fff;border:1px solid var(--line);border-radius:22px;padding:24px;box-shadow:0 10px 32px rgba(24,48,74,.045);margin:0 0 20px;min-width:0}
+.dashboard-species-card{display:block;background:#fff;border:1px solid var(--line);border-radius:22px;padding:24px;box-shadow:0 10px 32px rgba(24,48,74,.045);margin:0 0 20px;min-width:0}
 .species-overview{display:flex;align-items:center;justify-content:center;gap:clamp(24px,5vw,64px);padding:22px 8px 18px}
 .species-donut-wrap{width:176px;height:176px;flex:0 0 176px;display:grid;place-items:center}
 .species-donut{width:100%;height:100%;border-radius:50%;display:grid;place-items:center;position:relative;filter:drop-shadow(0 7px 12px rgba(28,47,66,.10))}
