@@ -51,7 +51,37 @@ export async function POST(request: Request) {
     const limit = MONTHLY_LIMITS[plan] || 1000;
     if (!privileged && (count || 0) >= limit) return NextResponse.json({ error: `Você atingiu o limite mensal de ${limit} leituras por IA do seu plano.` }, { status: 429 });
     const prompt = `Leia esta foto de uma lista/planilha de estoque de anilhas de aves. Extraia TODOS os números/códigos de anilha individuais, na ordem em que aparecem, sem inventar caracteres. Ignore quantidades, datas, preços, medidas, telefones e códigos que claramente não sejam números de anilha. Cada linha deve gerar apenas um código completo. Preserve letras, números, pontos, barras e hífens. Se um caractere estiver ilegível, NÃO adivinhe: omita aquele item e informe-o em uncertain. Remova duplicatas idênticas. Responda somente JSON: {"ring_numbers":["..."],"uncertain":["descrição curta da linha ilegível"],"notes":"observação geral"}. Não invente números. Se a imagem tiver várias colunas, leia todas de cima para baixo e da esquerda para a direita.`;
-    const response = await fetch("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: process.env.OPENAI_BIRD_VISION_MODEL || "gpt-4.1-mini", temperature: 0, response_format: { type: "json_object" }, messages: [{ role: "system", content: "Você é especialista em OCR de listas de estoque de anilhas para aves. Seja conservador: nunca complete números ilegíveis nem transforme quantidades em códigos." }, { role: "user", content: [{ type: "text", text: prompt }, { type: "image_url", image_url: { url: `data:${mime};base64,${bytes.toString("base64")}`, detail: "high" }]}]}] }) });
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: process.env.OPENAI_BIRD_VISION_MODEL || "gpt-4.1-mini",
+        temperature: 0,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content: "Você é especialista em OCR de listas de estoque de anilhas para aves. Seja conservador: nunca complete números ilegíveis nem transforme quantidades em códigos.",
+          },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:${mime};base64,${bytes.toString("base64")}`,
+                  detail: "high",
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) return NextResponse.json({ error: "A leitura da foto falhou. Tente uma imagem mais nítida, reta e bem iluminada." }, { status: 502 });
     let parsed: any; try { parsed = JSON.parse(result?.choices?.[0]?.message?.content || "{}"); } catch { return NextResponse.json({ error: "A IA não conseguiu estruturar a lista. Tente novamente." }, { status: 502 }); }
