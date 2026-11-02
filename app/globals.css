@@ -1068,3 +1068,10 @@ body{background:var(--bg);color:var(--text)}
 .pix-expiry-notice span{flex:1;min-width:220px}
 .pix-expiry-notice a{font-weight:800;color:#176b4b;text-decoration:underline}
 @media(max-width:640px){.public-payment-choice{grid-template-columns:1fr}.pix-expiry-notice{margin:10px;padding:12px}}
+
+/* Home: opções de pagamento explícitas em todos os planos pagos */
+.public-payment-actions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important;margin-top:18px!important;width:100%}
+.public-payment-actions .btn{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;min-height:54px!important;padding:12px 10px!important;text-align:center!important;white-space:normal!important;font-weight:800!important}
+.public-payment-actions .btn-pix{background:#e8f5ee!important;color:#116b45!important;border:1px solid #8bc9a8!important;box-shadow:none!important}
+.public-payment-actions .btn-pix:hover{background:#d9efe3!important}
+@media(max-width:640px){.public-payment-actions{grid-template-columns:1fr!important;gap:8px!important}}
