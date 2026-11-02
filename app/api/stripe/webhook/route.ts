@@ -132,23 +132,35 @@ async function applySubscriptionState(
 }
 
 
-async function activatePixCheckout(admin: ReturnType<typeof createAdminClient>, session: Stripe.Checkout.Session, eventType: string) {
+async function activatePixCheckout(admin: ReturnType<typeof createAdminClient>, session: Stripe.Checkout.Session, eventType: string, paidAt: number) {
   const userId = session.metadata?.user_id || session.client_reference_id;
   const plan = session.metadata?.plan;
   if (!userId || !["amador", "profissional", "lenda"].includes(plan || "")) {
     throw new Error("Checkout Pix sem user_id/plano válido nos metadados.");
   }
   if (session.payment_status !== "paid") return; // Pix pendente nunca libera acesso.
-  const now = new Date();
-  const end = new Date(now);
+  const paidDate = new Date(paidAt * 1000);
+  const { data: currentProfile, error: profileReadError } = await admin.from("profiles")
+    .select("plan,subscription_status,current_period_end")
+    .eq("id", userId).maybeSingle();
+  if (profileReadError) throw profileReadError;
+  // Renovação antecipada: acrescenta 12 meses ao vencimento vigente, sem perder dias já pagos.
+  // Compra nova/expirada: começa a contar a partir da confirmação do pagamento.
+  const currentEnd = currentProfile?.subscription_status === "pix_active" && currentProfile.current_period_end
+    ? new Date(currentProfile.current_period_end) : null;
+  const periodStart = currentEnd && currentEnd.getTime() > paidDate.getTime() ? currentEnd : paidDate;
+  const end = new Date(periodStart);
   end.setUTCFullYear(end.getUTCFullYear() + 1);
   const { error } = await admin.from("profiles").update({
     plan,
     stripe_customer_id: typeof session.customer === "string" ? session.customer : null,
     stripe_subscription_id: null,
     subscription_status: "pix_active",
-    current_period_start: now.toISOString(),
+    current_period_start: periodStart.toISOString(),
     current_period_end: end.toISOString(),
+    pix_last_paid_at: paidDate.toISOString(),
+    pix_payment_intent_id: typeof session.payment_intent === "string" ? session.payment_intent : null,
+    pix_expiry_notice_sent_at: null,
     ...(plan === "lenda" ? { lenda_consultation_used: false, lenda_consultation_used_at: null } : {}),
   }).eq("id", userId);
   if (error) throw error;
@@ -216,7 +228,7 @@ export async function POST(request: Request) {
       case "checkout.session.async_payment_succeeded": {
         const session = event.data.object as Stripe.Checkout.Session;
         if (session.mode === "payment" && session.metadata?.payment_method === "pix") {
-          await activatePixCheckout(admin, session, event.type);
+          await activatePixCheckout(admin, session, event.type, event.created);
           break;
         }
         // Payment Links não recebem automaticamente metadata dinâmica por usuário.

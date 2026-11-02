@@ -1061,3 +1061,10 @@ body{background:var(--bg);color:var(--text)}
 .payment-choice{display:grid;gap:9px;margin-top:18px}
 .payment-choice .btn{width:100%;text-align:center;justify-content:center}
 .payment-choice .btn-soft{border:1px solid var(--line)}
+
+.public-payment-choice{grid-template-columns:1fr 1fr;margin-top:18px}
+.pix-expiry-notice{margin:14px 20px 0;padding:14px 16px;border:1px solid #e8c56a;background:#fff9e8;border-radius:14px;display:flex;gap:10px 16px;align-items:center;flex-wrap:wrap;color:#654b12;font-size:13px}
+.pix-expiry-notice strong{font-size:14px}
+.pix-expiry-notice span{flex:1;min-width:220px}
+.pix-expiry-notice a{font-weight:800;color:#176b4b;text-decoration:underline}
+@media(max-width:640px){.public-payment-choice{grid-template-columns:1fr}.pix-expiry-notice{margin:10px;padding:12px}}
