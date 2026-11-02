@@ -1003,3 +1003,12 @@ body{background:var(--bg);color:var(--text)}
 .greeting-wave--animate{animation:apollo-greeting-wave 1.15s ease-in-out 1;}
 @keyframes apollo-greeting-wave{0%,100%{transform:rotate(0deg)}15%{transform:rotate(18deg)}30%{transform:rotate(-10deg)}45%{transform:rotate(18deg)}60%{transform:rotate(-6deg)}75%{transform:rotate(10deg)}}
 @media(prefers-reduced-motion:reduce){.greeting-wave--animate{animation:none}}
+
+
+/* CTA compacto de planos na landing page mobile; some ao chegar à seção de preços. */
+.mobile-plans-cta{display:none}
+@media(max-width:700px){
+  .mobile-plans-cta{position:fixed;z-index:105;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:44px;padding:0 18px;border:1px solid rgba(255,255,255,.72);border-radius:999px;background:#176b4b;color:#fff;box-shadow:0 8px 26px rgba(12,54,37,.24);font-size:13px;font-weight:800;letter-spacing:.01em;text-decoration:none;white-space:nowrap}
+  .mobile-plans-cta:active{transform:translateX(-50%) scale(.98)}
+  .mobile-plans-cta-arrow{font-size:18px;line-height:1}
+}
