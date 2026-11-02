@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
-const MONTHLY_LIMITS: Record<string, number> = { free: 1, profissional: 30, lenda: 100 };
+const MONTHLY_LIMITS: Record<string, number | null> = { free: 1, amador: 15, profissional: 30, lenda: null };
 
 export async function POST(request: Request) {
   try {
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     const { data: profile } = await supabase.from("profiles").select("plan,role").eq("id", user.id).maybeSingle();
     const plan = effectivePlan(profile?.plan, profile?.role);
     const isPrivileged = profile?.role === "owner" || profile?.role === "veterinarian";
-    if (!MONTHLY_LIMITS[plan] && !isPrivileged) {
+    if (!(plan in MONTHLY_LIMITS) && !isPrivileged) {
       return NextResponse.json({ error: "O Cadastro Inteligente por Foto está disponível com uma experiência gratuita e limites ampliados nos planos pagos." }, { status: 403 });
     }
 
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const mode = body?.mode === "genealogy" ? "genealogy" : "bird";
     const rawImages = Array.isArray(body?.images) ? body.images : [{ image: body?.image, mimeType: body?.mimeType }];
-    if (plan === "free" && !isPrivileged && mode === "genealogy") return NextResponse.json({ error: "A genealogia por foto é um recurso dos planos Profissional e Lenda. Faça upgrade para desbloquear essa ferramenta." }, { status: 403 });
+    if (["free", "amador"].includes(plan) && !isPrivileged && mode === "genealogy") return NextResponse.json({ error: "A genealogia por foto é um recurso dos planos Profissional e Lenda. Faça upgrade para desbloquear essa ferramenta." }, { status: 403 });
     if (plan === "free" && !isPrivileged && rawImages.length > 1) return NextResponse.json({ error: "No plano Grátis, você pode experimentar uma foto da frente por mês. O envio da frente e do verso está disponível nos planos pagos." }, { status: 403 });
     if (!rawImages.length || rawImages.length > 2) return NextResponse.json({ error: "Envie uma ou duas fotos da plaquinha." }, { status: 400 });
     const imagePayloads = rawImages.map((item: any) => {
@@ -47,11 +47,11 @@ export async function POST(request: Request) {
       console.error("[Apollo AI] usage count", countError);
       return NextResponse.json({ error: "Não foi possível validar o limite mensal do recurso. Verifique a migration do Supabase." }, { status: 500 });
     }
-    const limit = MONTHLY_LIMITS[plan] || 1000;
-    if (!isPrivileged && (count || 0) >= limit) {
+    const limit = MONTHLY_LIMITS[plan] ?? null;
+    if (!isPrivileged && limit !== null && (count || 0) >= limit) {
       const message = plan === "free"
-        ? "Você já utilizou sua análise gratuita deste mês. Faça upgrade para o Profissional e tenha até 30 análises mensais, foto da frente e do verso e genealogia por foto."
-        : `Você atingiu o limite de ${limit} leituras por foto neste mês do plano ${plan === "lenda" ? "Lenda" : "Profissional"}.`;
+        ? "Você já utilizou sua análise gratuita deste mês. Faça upgrade para o Criatório Amador e tenha 15 análises mensais, com fotos da frente e do verso da plaquinha."
+        : `Você atingiu o limite de ${limit} análises por foto neste mês do seu plano.`;
       return NextResponse.json({ error: message, upgrade: plan === "free", usage: { used: count || 0, limit } }, { status: 429 });
     }
     let prompt = "";

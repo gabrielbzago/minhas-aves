@@ -7,7 +7,7 @@ import { MessageCircle, X, Send, Mail, Phone, Star, ChevronDown, Headset } from 
 type Props = { plan: string; };
 const FAQ = [
   { q: "Como cadastro uma ave?", a: "Acesse Meu plantel e clique em Nova ave. Você pode preencher os dados manualmente ou usar o Cadastro inteligente por foto, conforme o limite do seu plano." },
-  { q: "Como funciona o limite de IA?", a: "O plano Grátis inclui 1 análise por mês. O Profissional inclui 30 e o Lenda inclui 100 análises mensais. Nos planos pagos, você também pode analisar a frente e o verso da plaquinha e usar a genealogia por foto." },
+  { q: "Como funciona o limite de IA?", a: "O plano Grátis inclui 1 análise por mês; o Criatório Amador, 15; o Profissional, 30; e o Criador Lenda tem análises ilimitadas. Uma análise pode usar fotos da frente e do verso. A genealogia por foto está disponível nos planos Profissional e Lenda." },
   { q: "Como faço upgrade do meu plano?", a: "Acesse Assinatura no menu do Apollo, compare os benefícios e escolha o plano que atende ao seu criatório." },
   { q: "Como gerencio anilhas e estoque?", a: "O módulo Gestão de anilhas permite cadastrar anilhas individualmente e acompanhar a utilização no plantel. A disponibilidade depende do plano contratado." },
   { q: "Como solicito ajuda ou reporto um problema?", a: "Envie uma mensagem pelo WhatsApp ou e-mail de suporte. Informe o e-mail da sua conta, o módulo e o que aconteceu. Assinantes recebem encaminhamento prioritário conforme o nível do plano." },

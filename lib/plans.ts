@@ -15,7 +15,7 @@ const commonPaid = [
 
 export const PLAN_FEATURES: Record<PlanCode, Set<string>> = {
   free: new Set(["gestao-ave", "historico-ave", "genealogia", "painel", "especies", "cartao-gaiola", "agendar-veterinario", "cadastro-inteligente-foto"]),
-  amador: new Set([...commonPaid, "agendar-veterinario"]),
+  amador: new Set([...commonPaid, "agendar-veterinario", "cadastro-inteligente-foto"]),
   profissional: new Set([...commonPaid, "reproducao", "doencas", "medicamentos", "genotipagem", "sexagem", "agendar-veterinario", "modulo-veterinario", "cadastro-inteligente-foto"]),
   lenda: new Set([...commonPaid, "reproducao", "doencas", "medicamentos", "genotipagem", "sexagem", "agendar-veterinario", "consulta-veterinaria-inclusa", "modulo-veterinario", "cadastro-inteligente-foto"]),
 };
@@ -29,7 +29,7 @@ export const PLAN_BENEFITS: Record<PlanCode, string[]> = {
   ],
   amador: [
     "Tudo do Grátis", "Plantel ilimitado", "Gestão de anilhas", "Fotos, documentos e gaiolas",
-    "Comportamento e registros avançados", "Cartões e impressões", "Impressão de ficha, plantel e genealogia", "Certificado genealógico individual com árvore até trisavós",
+    "Comportamento e registros avançados", "Cartões e impressões", "Impressão de ficha, plantel e genealogia", "Certificado genealógico individual com árvore até trisavós", "Cadastro inteligente de aves por foto (15 análises/mês)",
   ],
   profissional: [
     "Tudo do Criatório Amador", "Gestão de reprodução", "Doenças e acompanhamento", "Medicamentos",
@@ -38,7 +38,7 @@ export const PLAN_BENEFITS: Record<PlanCode, string[]> = {
   lenda: [
     "Tudo do Criatório Profissional", "1 consulta veterinária inclusa por período anual pago",
     "1 ave por consulta inclusa", "Histórico veterinário permanente", "Prontuário + receita em PDF",
-    "Novo benefício a cada renovação", "Cadastro inteligente de aves por foto (100 análises/mês), foto do verso e genealogia por IA", "Módulo Veterinário completo",
+    "Novo benefício a cada renovação", "Cadastro inteligente de aves por foto ilimitado, foto do verso e genealogia por IA", "Módulo Veterinário completo",
   ],
 };
 

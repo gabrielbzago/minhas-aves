@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CONVERSION_COPY } from "@/lib/conversion";
 
-export default function BirdForm({ species, birds, initialBird, canUseAi = false, isFreePlan = false }: { species: any[]; birds: any[]; initialBird?: any; canUseAi?: boolean; isFreePlan?: boolean }) {
+export default function BirdForm({ species, birds, initialBird, canUseAi = false, isFreePlan = false, canUseAiGenealogy = false }: { species: any[]; birds: any[]; initialBird?: any; canUseAi?: boolean; isFreePlan?: boolean; canUseAiGenealogy?: boolean }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -11,7 +11,7 @@ export default function BirdForm({ species, birds, initialBird, canUseAi = false
   const [aiScanning, setAiScanning] = useState(false);
   const [aiScanError, setAiScanError] = useState("");
   const [aiScanInfo, setAiScanInfo] = useState("");
-  const [aiUsage, setAiUsage] = useState<{used:number;limit:number} | null>(null);
+  const [aiUsage, setAiUsage] = useState<{used:number;limit:number|null} | null>(null);
   const [showAiUpgrade, setShowAiUpgrade] = useState(false);
   const [aiFileInputKey, setAiFileInputKey] = useState(0);
   const [frontLabelPhoto, setFrontLabelPhoto] = useState<File | null>(null);
@@ -90,11 +90,11 @@ export default function BirdForm({ species, birds, initialBird, canUseAi = false
         genetics: data.genetics && Object.keys(data.genetics).length ? Object.entries(data.genetics).map(([a,b])=>`${a}:${b}`).join(",") : current.genetics,
       }));
       const found = [data.name, data.species_id && "espécie", data.birth_date && "nascimento", data.ring_number && "anilha", data.sex && data.sex !== "indeterminado" && "sexo"].filter(Boolean).length;
-      setAiScanInfo(`Leitura concluída com ${selectedPhotos.length} ${selectedPhotos.length === 1 ? "foto" : "fotos"}: ${found} informações identificadas. Confira todos os campos antes de salvar.${result.usage ? ` Uso mensal: ${result.usage.used}/${result.usage.limit}.` : ""}`);
+      setAiScanInfo(`Leitura concluída com ${selectedPhotos.length} ${selectedPhotos.length === 1 ? "foto" : "fotos"}: ${found} informações identificadas. Confira todos os campos antes de salvar.${result.usage ? ` Uso mensal: ${result.usage.limit === null ? `${result.usage.used} análises utilizadas (ilimitado).` : `${result.usage.used}/${result.usage.limit}.`}` : ""}`);
     } catch (error: any) {
       const message = error?.message || "Não foi possível analisar a imagem.";
       setAiScanError(message);
-      if (/upgrade|análise gratuita|limite|plano Grátis|genealogia por foto|frente e verso/i.test(message)) setShowAiUpgrade(true);
+      if (isFreePlan && /upgrade|análise gratuita|limite|plano Grátis/i.test(message)) setShowAiUpgrade(true);
     } finally { setAiScanning(false); }
   }
 
@@ -134,7 +134,7 @@ export default function BirdForm({ species, birds, initialBird, canUseAi = false
         if (item?.status === "nao_cadastrado") return `${label}: ${item.name || item.ring_number || "identificado"}, mas não cadastrado no plantel`;
         return `${label}: não identificado na foto`;
       };
-      setAiGenealogyInfo(`${describe("Pai", data.father)}. ${describe("Mãe", data.mother)}. Confira os vínculos antes de salvar.${result.usage ? ` Uso mensal: ${result.usage.used}/${result.usage.limit}.` : ""}`);
+      setAiGenealogyInfo(`${describe("Pai", data.father)}. ${describe("Mãe", data.mother)}. Confira os vínculos antes de salvar.${result.usage ? ` Uso mensal: ${result.usage.limit === null ? `${result.usage.used} análises utilizadas (ilimitado).` : `${result.usage.used}/${result.usage.limit}.`}` : ""}`);
     } catch (error: any) {
       setAiGenealogyError(error?.message || "Não foi possível analisar a genealogia.");
     } finally { setAiGenealogyScanning(false); setAiGenealogyFileInputKey((x: number) => x + 1); }
@@ -248,17 +248,17 @@ export default function BirdForm({ species, birds, initialBird, canUseAi = false
     {error && <div className="error" role="alert">{error}</div>}
     {!initialBird && (canUseAi ? <section style={{border:"1px solid var(--line)",borderRadius:14,padding:16,marginBottom:18,background:"linear-gradient(135deg,#f3fbf7,#fff)"}}>
       <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",flexWrap:"wrap"}}>
-        <div><strong style={{display:"block",fontSize:15}}>✨ Cadastro Inteligente por Foto</strong><small style={{color:"var(--muted)"}}>{isFreePlan ? "Experimente a leitura automática da plaquinha com uma foto gratuita por mês." : "Fotografe a frente e, se necessário, o verso da plaquinha. A IA combina as duas fotos antes de preencher os dados."}</small></div>
+        <div><strong style={{display:"block",fontSize:15}}>✨ Cadastro Inteligente por Foto</strong><small style={{color:"var(--muted)"}}>{isFreePlan ? "Experimente a leitura automática da plaquinha com uma foto por mês." : "Fotografe a frente e, se necessário, o verso da plaquinha. A IA combina as duas fotos antes de preencher os dados."}</small></div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
           <label className="btn btn-soft" style={{cursor:aiScanning?"wait":"pointer",margin:0,opacity:aiScanning ? 0.65 : 1}}>📷 Foto da frente<input key={aiFileInputKey} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={aiScanning || aiGenealogyScanning} onChange={e=>setFrontLabelPhoto(e.target.files?.[0] || null)} style={{display:"none"}}/></label>
           {!isFreePlan && <label className="btn btn-soft" style={{cursor:aiScanning?"wait":"pointer",margin:0,opacity:aiScanning ? 0.65 : 1}}>＋ Foto do verso (opcional)<input key={backFileInputKey} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={aiScanning || aiGenealogyScanning} onChange={e=>setBackLabelPhoto(e.target.files?.[0] || null)} style={{display:"none"}}/></label>}
           <button type="button" className="btn btn-primary" disabled={aiScanning || aiGenealogyScanning || !frontLabelPhoto} onClick={()=>void scanBirdLabel()}>{aiScanning?"Analisando fotos...":"✨ Analisar fotos"}</button>
-          {!isFreePlan && <label className="btn btn-soft" style={{cursor:aiGenealogyScanning?"wait":"pointer",margin:0,opacity:aiGenealogyScanning ? 0.65 : 1}}>{aiGenealogyScanning?"Lendo árvore...":"🌳 Genealogia por foto"}<input key={aiGenealogyFileInputKey} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={aiScanning || aiGenealogyScanning} onChange={e=>void scanGenealogyPhoto(e.target.files?.[0])} style={{display:"none"}}/></label>}
+          {canUseAiGenealogy && <label className="btn btn-soft" style={{cursor:aiGenealogyScanning?"wait":"pointer",margin:0,opacity:aiGenealogyScanning ? 0.65 : 1}}>{aiGenealogyScanning?"Lendo árvore...":"🌳 Genealogia por foto"}<input key={aiGenealogyFileInputKey} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={aiScanning || aiGenealogyScanning} onChange={e=>void scanGenealogyPhoto(e.target.files?.[0])} style={{display:"none"}}/></label>}
         </div>
       </div>
       {aiScanError&&<p className="error" role="alert" style={{margin:"10px 0 0"}}>{aiScanError}</p>}
       {aiScanInfo&&<p style={{margin:"10px 0 0",fontSize:12,color:"var(--primary-dark)",fontWeight:700}}>{aiScanInfo}</p>}
-      {isFreePlan && aiUsage && <p style={{margin:"8px 0 0",fontSize:12,color:"var(--muted)"}}>Sua experiência gratuita: {aiUsage.used}/{aiUsage.limit} análise utilizada neste mês.</p>}
+      {aiUsage && <p style={{margin:"8px 0 0",fontSize:12,color:"var(--muted)"}}>{aiUsage.limit === null ? `Uso neste mês: ${aiUsage.used} análises (ilimitado).` : `Uso neste mês: ${aiUsage.used}/${aiUsage.limit} análises.`}</p>}
       {showAiUpgrade && <div style={{marginTop:12,padding:14,borderRadius:12,background:"#f0f7ff",border:"1px solid #cfe3ff"}}><strong>🚀 {CONVERSION_COPY.aiLimit.title}</strong><p style={{fontSize:12,margin:"6px 0 10px",color:"var(--muted)"}}>{CONVERSION_COPY.aiLimit.description}</p><a className="btn btn-primary" href="/dashboard/assinatura">{CONVERSION_COPY.aiLimit.cta}</a></div>}
       {aiGenealogyError&&<p className="error" role="alert" style={{margin:"10px 0 0"}}>{aiGenealogyError}</p>}
       {aiGenealogyInfo&&<p style={{margin:"10px 0 0",fontSize:12,color:"var(--primary-dark)",fontWeight:700}}>{aiGenealogyInfo}</p>}
@@ -266,8 +266,8 @@ export default function BirdForm({ species, birds, initialBird, canUseAi = false
         {frontLabelPhoto && <span>Frente: {frontLabelPhoto.name}</span>}
         {backLabelPhoto && <span>Verso: {backLabelPhoto.name} <button type="button" className="btn btn-ghost" style={{padding:"2px 6px",fontSize:10}} onClick={()=>{setBackLabelPhoto(null);setBackFileInputKey(x=>x+1);}}>Remover verso</button></span>}
       </div>}
-      <small style={{display:"block",marginTop:8,color:"var(--muted)"}}>{isFreePlan ? "Seu plano inclui 1 análise de plaquinha por mês, com uma foto da frente." : "Disponível nos planos Profissional e Lenda. JPG, PNG ou WEBP; a imagem é otimizada automaticamente antes do envio. Adicione a foto do verso se houver mais informações. Depois clique em Analisar fotos e confira os campos antes de salvar."}</small>
-    </section> : <section style={{border:"1px solid var(--line)",borderRadius:14,padding:16,marginBottom:18,background:"#f8fafc"}}><strong>✨ Cadastro Inteligente por Foto</strong><p style={{fontSize:12,color:"var(--muted)",margin:"6px 0 10px"}}>Economize tempo: fotografe a plaquinha e a IA preenche os dados da ave automaticamente. Recurso disponível nos planos Profissional e Lenda.</p><a className="btn btn-soft" href="/dashboard/assinatura">Conhecer planos</a></section>)}
+      <small style={{display:"block",marginTop:8,color:"var(--muted)"}}>{isFreePlan ? "Seu plano inclui 1 análise de plaquinha por mês, com uma foto da frente." : "Limite mensal conforme seu plano. JPG, PNG ou WEBP; a imagem é otimizada automaticamente antes do envio. Adicione a foto do verso se houver mais informações. Depois clique em Analisar fotos e confira os campos antes de salvar."}</small>
+    </section> : <section style={{border:"1px solid var(--line)",borderRadius:14,padding:16,marginBottom:18,background:"#f8fafc"}}><strong>✨ Cadastro Inteligente por Foto</strong><p style={{fontSize:12,color:"var(--muted)",margin:"6px 0 10px"}}>Economize tempo: fotografe a plaquinha e a IA preenche os dados da ave automaticamente. Consulte o limite mensal do seu plano.</p><a className="btn btn-soft" href="/dashboard/assinatura">Conhecer planos</a></section>)}
     <div className="form-grid">
       <div className="field"><label>Nome da ave *</label><input required value={f.name} onChange={e => set("name", e.target.value)} placeholder="Ex.: Thor" /></div>
       <div className="field"><label>Espécie *</label><select required value={f.species_id} onChange={e => { set("species_id", e.target.value); setStockRingId(""); }}><option value="">Selecione...</option>{species.map(s => <option key={s.id} value={s.id}>{s.common_name} — {s.scientific_name}</option>)}</select></div>
