@@ -1057,3 +1057,7 @@ body{background:var(--bg);color:var(--text)}
 
 @media(max-width:700px){.home-reproduction-metrics{grid-template-columns:1fr;gap:12px;padding-top:12px}.home-reproduction-main{justify-content:flex-start}.home-reproduction-stats{gap:6px}.home-reproduction-stats>div{padding:9px}.home-reproduction-stats span{font-size:9px}.home-reproduction-stats b{font-size:15px}}
 @media(prefers-reduced-motion:reduce){.home-donut,.home-reproduction-card,.home-egg-ring{animation:none!important;transition:none!important}}
+
+.payment-choice{display:grid;gap:9px;margin-top:18px}
+.payment-choice .btn{width:100%;text-align:center;justify-content:center}
+.payment-choice .btn-soft{border:1px solid var(--line)}

@@ -131,6 +131,47 @@ async function applySubscriptionState(
   }
 }
 
+
+async function activatePixCheckout(admin: ReturnType<typeof createAdminClient>, session: Stripe.Checkout.Session, eventType: string) {
+  const userId = session.metadata?.user_id || session.client_reference_id;
+  const plan = session.metadata?.plan;
+  if (!userId || !["amador", "profissional", "lenda"].includes(plan || "")) {
+    throw new Error("Checkout Pix sem user_id/plano válido nos metadados.");
+  }
+  if (session.payment_status !== "paid") return; // Pix pendente nunca libera acesso.
+  const now = new Date();
+  const end = new Date(now);
+  end.setUTCFullYear(end.getUTCFullYear() + 1);
+  const { error } = await admin.from("profiles").update({
+    plan,
+    stripe_customer_id: typeof session.customer === "string" ? session.customer : null,
+    stripe_subscription_id: null,
+    subscription_status: "pix_active",
+    current_period_start: now.toISOString(),
+    current_period_end: end.toISOString(),
+    ...(plan === "lenda" ? { lenda_consultation_used: false, lenda_consultation_used_at: null } : {}),
+  }).eq("id", userId);
+  if (error) throw error;
+
+  if (plan === "lenda") {
+    await admin.rpc("record_vet_subscription_history", {
+      p_creator_id: userId,
+      p_plan: "lenda",
+      p_event_type: eventType,
+      p_status: "pix_active",
+      p_subscription_id: session.payment_intent ? String(session.payment_intent) : session.id,
+      p_period_start: now.toISOString(),
+      p_period_end: end.toISOString(),
+      p_note: "Plano Lenda ativado por pagamento Pix anual",
+    });
+    await admin.rpc("create_lenda_payout", {
+      p_creator_id: userId,
+      p_subscription_id: session.payment_intent ? String(session.payment_intent) : session.id,
+      p_period_start: now.toISOString(),
+    });
+  }
+}
+
 export async function POST(request: Request) {
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
@@ -171,8 +212,13 @@ export async function POST(request: Request) {
     eventLogged = true;
 
     switch (event.type) {
-      case "checkout.session.completed": {
+      case "checkout.session.completed":
+      case "checkout.session.async_payment_succeeded": {
         const session = event.data.object as Stripe.Checkout.Session;
+        if (session.mode === "payment" && session.metadata?.payment_method === "pix") {
+          await activatePixCheckout(admin, session, event.type);
+          break;
+        }
         // Payment Links não recebem automaticamente metadata dinâmica por usuário.
         // O endpoint de checkout envia client_reference_id no formato "userUUID_plan".
         const clientReference = session.client_reference_id || "";
