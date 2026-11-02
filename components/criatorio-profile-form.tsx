@@ -25,7 +25,7 @@ export default function CriatorioProfileForm({ profile, email, logoUrl }: { prof
     let bitmap: ImageBitmap;
     try { bitmap = await createImageBitmap(file); }
     catch { throw new Error("Não foi possível abrir essa imagem. Escolha um PNG, JPG ou WEBP válido."); }
-    const maxSide = 512;
+    const maxSide = 1024;
     const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(bitmap.width * scale));
@@ -38,12 +38,12 @@ export default function CriatorioProfileForm({ profile, email, logoUrl }: { prof
     const toBlob = (quality: number) => new Promise<Blob>((resolve, reject) =>
       canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Falha ao compactar a logo.")), "image/webp", quality)
     );
-    let blob = await toBlob(0.88);
-    for (const quality of [0.82, 0.76, 0.68, 0.60]) {
-      if (blob.size <= 300 * 1024) break;
+    let blob = await toBlob(0.90);
+    for (const quality of [0.84, 0.78, 0.72, 0.65, 0.58]) {
+      if (blob.size <= 1024 * 1024) break;
       blob = await toBlob(quality);
     }
-    if (blob.size > 300 * 1024) throw new Error("Não foi possível reduzir a logo para até 300 KB. Escolha uma imagem mais simples.");
+    if (blob.size > 1024 * 1024) throw new Error("Não foi possível reduzir a logo para até 1 MB. Escolha uma imagem mais simples.");
     return new File([blob], "logo.webp", { type: "image/webp", lastModified: Date.now() });
   }
 
@@ -58,7 +58,7 @@ export default function CriatorioProfileForm({ profile, email, logoUrl }: { prof
     if (pathError) throw new Error(`A imagem foi enviada, mas não foi possível vinculá-la ao perfil: ${pathError.message}`);
     setLogoPath(path);
     setLogoPreview(URL.createObjectURL(file));
-    setMessage(`Logo otimizada e vinculada! ${canvasSizeLabel(file.size)}. Recomendado: imagem quadrada, até 512 × 512 px e 300 KB.`);
+    setMessage(`Logo otimizada e vinculada! ${canvasSizeLabel(file.size)}. Recomendado: imagem quadrada, até 1024 × 1024 px e 1 MB.`);
   }
 
   async function submit(e: FormEvent) {
@@ -96,7 +96,7 @@ export default function CriatorioProfileForm({ profile, email, logoUrl }: { prof
           {(logoPreview || logoUrl || logoPath) && <div style={{width:86,height:86,borderRadius:16,border:"1px solid var(--border)",background:"#fff",display:"grid",placeItems:"center",overflow:"hidden"}}>{(logoPreview || logoUrl) ? <img src={logoPreview || logoUrl || ""} alt="Logo do criatório" style={{width:"100%",height:"100%",objectFit:"contain"}} /> : <div style={{fontSize:11,color:"var(--muted)",textAlign:"center"}}>Logo vinculada; recarregue para visualizar</div>}</div>}
           <input type="file" accept="image/png,image/jpeg,image/webp" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;setError("");try{await uploadLogo(file)}catch(err:any){setError(err.message||"Não foi possível enviar a logo.")}}}/>
         </div>
-        <small style={{color:"var(--muted)"}}>Recomendado: imagem quadrada de até 512 × 512 px e 300 KB. O Apollo redimensiona e compacta automaticamente imagens maiores antes do envio.</small>
+        <small style={{color:"var(--muted)"}}>Recomendado: imagem quadrada de até 1024 × 1024 px e 1 MB. O Apollo redimensiona e compacta automaticamente imagens maiores antes do envio.</small>
       </div>
     </div>
     <div className="form-actions"><button className="btn btn-primary" disabled={saving}>{saving?"Salvando...":"Salvar identidade do criatório"}</button></div>
