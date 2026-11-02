@@ -267,11 +267,11 @@ table{width:100%;border-collapse:collapse;min-width:720px}th,td{padding:14px 15p
 
 /* Logo da identidade do criatório na visão geral */
 .dashboard-creator-heading{display:flex;align-items:center;gap:14px;min-width:0}
-.dashboard-creator-logo{width:58px;height:58px;flex:0 0 58px;border-radius:16px;border:1px solid var(--border);background:#fff;display:grid;place-items:center;overflow:hidden;box-shadow:0 4px 14px rgba(18,65,52,.06)}
-.dashboard-creator-logo img{width:100%;height:100%;object-fit:contain;padding:5px}
+.dashboard-creator-logo{width:76px;height:76px;flex:0 0 76px;border-radius:16px;border:1px solid var(--border);background:#fff;display:grid;place-items:center;overflow:hidden;box-shadow:0 4px 14px rgba(18,65,52,.06)}
+.dashboard-creator-logo img{width:100%;height:100%;object-fit:contain;padding:3px}
 .dashboard-creator-logo span{font-weight:900;color:var(--primary);font-size:20px}
 .dashboard-creator-heading .kicker{display:inline-block;margin-bottom:3px}
-@media (max-width:640px){.dashboard-creator-heading{gap:10px}.dashboard-creator-logo{width:48px;height:48px;flex-basis:48px;border-radius:13px}.dashboard-creator-logo img{padding:4px}}
+@media (max-width:640px){.dashboard-creator-heading{gap:12px}.dashboard-creator-logo{width:62px;height:62px;flex-basis:62px;border-radius:13px}.dashboard-creator-logo img{padding:3px}}
 
 /* Veterinário — tabela de plantel */
 .table-wrap{width:100%;overflow-x:auto;border:1px solid #dceee7;border-radius:16px;background:#fff}
