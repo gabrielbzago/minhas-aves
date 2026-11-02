@@ -172,14 +172,14 @@ async function activatePixCheckout(admin: ReturnType<typeof createAdminClient>, 
       p_event_type: eventType,
       p_status: "pix_active",
       p_subscription_id: session.payment_intent ? String(session.payment_intent) : session.id,
-      p_period_start: now.toISOString(),
+      p_period_start: periodStart.toISOString(),
       p_period_end: end.toISOString(),
       p_note: "Plano Lenda ativado por pagamento Pix anual",
     });
     await admin.rpc("create_lenda_payout", {
       p_creator_id: userId,
       p_subscription_id: session.payment_intent ? String(session.payment_intent) : session.id,
-      p_period_start: now.toISOString(),
+      p_period_start: periodStart.toISOString(),
     });
   }
 }
