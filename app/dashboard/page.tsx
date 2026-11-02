@@ -1,4 +1,5 @@
 import Link from "next/link";
+import GreetingWave from "@/components/greeting-wave";
 import {requireUser} from "@/lib/auth";
 import {redirect} from "next/navigation";
 import {cookies} from "next/headers";
@@ -64,7 +65,7 @@ export default async function DashboardPage({searchParams}:{searchParams?:Promis
  const preview=isOwner && (await cookies()).get('mc_creator_preview')?.value==='1';
  const uiPlan=effectivePlan(profile?.plan,profile?.role);
  if(isOwner && !creatorMode && !preview) redirect('/dashboard/owner');
- return <main className="content"><div className="page-title"><div className="dashboard-welcome"><div className="dashboard-creator-heading"><div className="dashboard-creator-logo">{logoUrl?<img src={logoUrl} alt={`Logo ${profile?.criatorio_name||"do criatório"}`} />:<img src="/branding/Minhas Aves-icon-light.png" alt="Minhas Aves" />}</div><div><span className="kicker">{profile?.criatorio_name||"Minhas Aves"}</span><h1>Olá, {profile?.full_name||"criador"} 👋</h1><p>Tenha uma visão rápida do seu criatório.</p></div></div></div><Link href="/dashboard/plantel/novo" className="btn btn-primary">+ Nova ave</Link></div>
+ return <main className="content"><div className="page-title"><div className="dashboard-welcome"><div className="dashboard-creator-heading"><div className="dashboard-creator-logo">{logoUrl?<img src={logoUrl} alt={`Logo ${profile?.criatorio_name||"do criatório"}`} />:<img src="/branding/Minhas Aves-icon-light.png" alt="Minhas Aves" />}</div><div><span className="kicker">{profile?.criatorio_name||"Minhas Aves"}</span><h1>Olá, {profile?.full_name||"criador"} <GreetingWave userId={user.id} /></h1><p>Tenha uma visão rápida do seu criatório.</p></div></div></div><Link href="/dashboard/plantel/novo" className="btn btn-primary">+ Nova ave</Link></div>
  <div className="stat-grid"><div className="stat"><small>Aves no plantel</small><strong>{birdCount}</strong><span className="stat-foot">Registros cadastrados</span></div><div className="stat"><small>Aves ativas</small><strong>{activeCount}</strong><span className="stat-foot">No plantel atualmente</span></div><div className="stat"><small>Plano atual</small><strong style={{fontSize:20}}>{uiPlan==='lenda'?'Lenda':uiPlan==='profissional'?'Profissional':uiPlan==='amador'?'Amador':'Grátis'}</strong><span className="stat-foot">Seu nível de acesso</span></div><div className="stat"><small>Limite de aves</small><strong>{uiPlan==='free'?String(5+(profile?.bonus_birds||0)):"∞"}</strong><span className="stat-foot">Capacidade do plano</span></div></div>
  <section className="dashboard-insights">
   <div className="dashboard-sex-card">

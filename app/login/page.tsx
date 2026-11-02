@@ -27,6 +27,13 @@ export default function LoginPage() {
     return candidate;
   }
 
+  function resetGreetingForNewLogin() {
+    try {
+      // Uma nova autenticação deve permitir uma nova saudação animada.
+      Object.keys(window.sessionStorage).filter((key) => key.startsWith("apollo:greeting-wave:")).forEach((key) => window.sessionStorage.removeItem(key));
+    } catch { /* sessionStorage pode estar indisponível no navegador. */ }
+  }
+
   function continueAfterLogin() {
     const nextPath = getSafeNextPath();
     if (nextPath !== "/dashboard") {
@@ -71,6 +78,7 @@ export default function LoginPage() {
   }
 
   async function signInWithGoogle() {
+    resetGreetingForNewLogin();
     setLoading(true);
     setError("");
     try {
@@ -87,6 +95,7 @@ export default function LoginPage() {
   }
 
   async function signInWithPasskey() {
+    resetGreetingForNewLogin();
     setLoading(true);
     setError("");
     try {
@@ -106,6 +115,7 @@ export default function LoginPage() {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    resetGreetingForNewLogin();
     setLoading(true);
     setError("");
     try {

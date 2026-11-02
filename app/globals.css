@@ -997,3 +997,9 @@ body{background:var(--bg);color:var(--text)}
 .mobile-owner-mode-panel .mobile-nav-title{display:flex;align-items:center;gap:6px;color:#1f7656;font-weight:850;font-size:10px;letter-spacing:.06em}
 .mobile-owner-mode-panel a,.mobile-owner-mode-panel button{width:100%;display:flex;align-items:center;gap:9px;padding:11px 10px;border:1px solid #d4e8dc;border-radius:9px;background:#fff;color:#174b34;text-decoration:none;font-size:13px;font-weight:750;text-align:left}
 .mobile-owner-mode-panel button{cursor:pointer}
+
+/* Saudação do dashboard: cumprimento curto, uma vez por autenticação. */
+.greeting-wave{display:inline-block;transform-origin:70% 70%;vertical-align:baseline;}
+.greeting-wave--animate{animation:apollo-greeting-wave 1.15s ease-in-out 1;}
+@keyframes apollo-greeting-wave{0%,100%{transform:rotate(0deg)}15%{transform:rotate(18deg)}30%{transform:rotate(-10deg)}45%{transform:rotate(18deg)}60%{transform:rotate(-6deg)}75%{transform:rotate(10deg)}}
+@media(prefers-reduced-motion:reduce){.greeting-wave--animate{animation:none}}
