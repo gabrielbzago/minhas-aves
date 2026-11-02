@@ -52,7 +52,13 @@ async function ensureUserProfile(supabase: any) {
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const origin = requestUrl.origin;
-  const nextPath = safeNextPath(requestUrl.searchParams.get("next"));
+  // Convites precisam passar pela definição explícita de senha antes do dashboard.
+  // O Supabase pode retornar tanto code (PKCE) quanto token_hash + type.
+  const authType = requestUrl.searchParams.get("type");
+  const requestedNext = requestUrl.searchParams.get("next");
+  const nextPath = safeNextPath(
+    requestedNext || (authType === "invite" ? "/definir-senha" : null)
+  );
   const successResponse = NextResponse.redirect(new URL(nextPath, origin));
   const errorResponse = (message: string) =>
     NextResponse.redirect(new URL(`/login?auth_error=${encodeURIComponent(message)}`, origin));
