@@ -5,7 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 type Bird={id:string;name:string;sex:string;ring_number?:string|null;species_id?:string|null;species?:{common_name?:string}|null};
-type Event={id:string;bird_id:string;partner_bird_id?:string|null;event_type:string;event_date:string;title:string;egg_count?:number|null;chick_count?:number|null;incubation_start_date?:string|null;ring_days_after?:number|null;notes?:string|null;bird?:Bird;partner_bird?:Bird|null};
+type Event={id:string;bird_id:string;partner_bird_id?:string|null;source_event_id?:string|null;event_type:string;event_date:string;title:string;egg_count?:number|null;chick_count?:number|null;incubation_start_date?:string|null;ring_days_after?:number|null;notes?:string|null;bird?:Bird;partner_bird?:Bird|null};
 type Setting={species_id:string;incubation_days:number;laying_days:number;ring_days_after:number;hatch_alert_days:number;ring_alert_days:number;enabled:boolean};
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
 const currentMonthKey=()=>today().slice(0,7);
@@ -14,6 +14,7 @@ const fmt=(s:string)=>new Date(`${s}T12:00:00`).toLocaleDateString("pt-BR");
 const diff=(a:string,b:string)=>Math.round((new Date(`${b}T12:00:00`).getTime()-new Date(`${a}T12:00:00`).getTime())/86400000);
 const defaults=(species_id:string):Setting=>({species_id,incubation_days:13,laying_days:2,ring_days_after:5,hatch_alert_days:2,ring_alert_days:2,enabled:true});
 const label:Record<string,string>={gala:"Gala",postura:"Postura",nascimento:"Nascimento",anilhamento:"Anilhamento"};
+const isLegacyRingReminder=(e:Event)=>e.event_type==="anilhamento"&&!!e.source_event_id&&(e.title||"").startsWith("🔖 Anilhar filhotes —");
 
 export default function ReproductionManager({birds=[]}:{birds:Bird[]}){
  const [events,setEvents]=useState<Event[]>([]); const [settings,setSettings]=useState<Record<string,Setting>>({}); const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [error,setError]=useState(""); const [notice,setNotice]=useState("");
