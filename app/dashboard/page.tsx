@@ -11,7 +11,7 @@ export default async function DashboardPage({searchParams}:{searchParams?:Promis
  const params=searchParams?await searchParams:{}; const creatorMode=params.mode==='creator';
  const [{data:profile},{data:birdRows},{data:calendarRows},{data:ringRows},{data:vetRows}]=await Promise.all([
   supabase.from("profiles").select("full_name,criatorio_name,criatorio_logo_path,plan,bonus_birds,role,lenda_consultation_used").eq("id",user.id).maybeSingle(),
-  supabase.from("birds").select("id,name,sex,status,birth_date,species:species_id(common_name)").or("is_genealogy_reference.eq.false,is_genealogy_reference.is.null"),
+  supabase.from("birds").select("id,name,sex,status,birth_date,ring_number,species:species_id(common_name)").or("is_genealogy_reference.eq.false,is_genealogy_reference.is.null"),
   supabase.from("calendar_events").select("id,bird_id,event_type,event_date,title,egg_count,chick_count,incubation_start_date,source_event_id").eq("user_id",user.id).order("event_date",{ascending:true}).limit(500),
   supabase.from("ring_inventory").select("id,status").eq("user_id",user.id),
   supabase.from("vet_consultations").select("id,status,consultation_date,scheduled_at,description").eq("creator_id",user.id).order("created_at",{ascending:false}).limit(100)
@@ -43,8 +43,17 @@ export default async function DashboardPage({searchParams}:{searchParams?:Promis
  const speciesColors=speciesSummary.map((entry,index)=>speciesPalette[index%speciesPalette.length]);
  let speciesCursor=0;
  const speciesGradient=speciesSummary.length?`conic-gradient(${speciesSummary.map(([name,count],index)=>{const start=speciesCursor;speciesCursor+=birdCount?count/birdCount*360:0;return `${speciesColors[index]} ${start}deg ${speciesCursor}deg`;}).join(",")})`:"conic-gradient(#e8edf2 0deg 360deg)";
+ const postureEvents=events.filter((e:any)=>e.event_type==="postura");
  const reproductiveBirths=events.filter((e:any)=>e.event_type==="nascimento").length;
- const reproductivePosturas=events.filter((e:any)=>e.event_type==="postura").length;
+ const reproductivePosturas=postureEvents.length;
+ const postureFemaleIds=new Set(postureEvents.map((e:any)=>e.bird_id));
+ const femalesWithPosture=postureFemaleIds.size;
+ const averageEggs=postureEvents.length?eggs/postureEvents.length:0;
+ const postureCoverage=femaleCount?Math.min(100,Math.round(femalesWithPosture/femaleCount*100)):0;
+ const postureByFemale=birds.filter((b:any)=>["fêmea","femea"].includes(String(b.sex||"").trim().toLowerCase())).map((bird:any)=>{
+  const records=postureEvents.filter((e:any)=>e.bird_id===bird.id).sort((a:any,b:any)=>String(a.event_date).localeCompare(String(b.event_date)));
+  return {bird,posturas:records.length,eggs:records.reduce((n:number,e:any)=>n+Math.max(0,Number(e.egg_count||0)),0),latest:records[records.length-1]||null};
+ }).filter((x:any)=>x.posturas>0).sort((a:any,b:any)=>b.posturas-a.posturas||b.eggs-a.eggs);
  const completedConsults=(vetRows||[]).filter((v:any)=>v.status==="completed").length;
  const nextConsult=(vetRows||[]).filter((v:any)=>["requested","scheduled"].includes(v.status)).sort((a:any,b:any)=>String(a.scheduled_at||a.consultation_date||"").localeCompare(String(b.scheduled_at||b.consultation_date||"")))[0];
  const fmt=(v:string)=>new Intl.DateTimeFormat("pt-BR",{timeZone:"UTC"}).format(new Date(`${v}T12:00:00Z`));
@@ -85,11 +94,22 @@ export default async function DashboardPage({searchParams}:{searchParams?:Promis
   </div>:<p className="sex-empty">Cadastre aves com espécies definidas para visualizar esta distribuição.</p>}
   <div className="sex-insight-footer"><span><b>{speciesSummary.length}</b> {speciesSummary.length===1?"espécie cadastrada":"espécies cadastradas"}</span><Link href="/dashboard/plantel">Ver plantel →</Link></div>
  </section>
+ <section className="dashboard-posture-card" aria-label="Resumo de postura e ovos">
+  <div className="dashboard-section-heading"><div><span className="dashboard-eyebrow">REPRODUÇÃO · INDICADORES</span><h2>Postura e quantidade de ovos</h2><p>Resumo calculado a partir das posturas registradas no calendário.</p></div><span className="home-chart-icon">🥚</span></div>
+  <div className="dashboard-posture-overview">
+   <div className="dashboard-posture-main"><div className="dashboard-posture-donut" style={{background:`conic-gradient(#eba93d 0% ${postureCoverage}%,#f4ead7 ${postureCoverage}% 100%)`}}><div><strong>{eggs}</strong><span>OVOS</span></div></div><div className="dashboard-posture-copy"><strong>Ovos registrados</strong><span>Quantidade total em todas as posturas cadastradas.</span></div></div>
+   <div className="dashboard-posture-stats"><div><span>Posturas registradas</span><strong>{reproductivePosturas}</strong></div><div><span>Fêmeas com postura</span><strong>{femalesWithPosture}</strong></div><div className="wide"><span>Média de ovos por postura</span><strong>{averageEggs.toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1})}</strong></div></div>
+  </div>
+  <div className="dashboard-posture-females"><div className="dashboard-posture-females-head"><div><strong>Posturas por fêmea</strong><span>Quantidade de posturas e ovos registrados para cada matriz.</span></div><small>{postureByFemale.length} {postureByFemale.length===1?"fêmea":"fêmeas"}</small></div>
+   {postureByFemale.length?<div className="dashboard-posture-female-list">{postureByFemale.map((item:any)=><div className="dashboard-posture-female" key={item.bird.id}><div><strong>{item.bird.name}</strong><span>{item.bird.ring_number||"Anilha não informada"} · {item.bird.species?.common_name||"Espécie não informada"}</span><small>Última postura: {item.latest?fmt(item.latest.event_date):"—"}{item.latest?` · ${Number(item.latest.egg_count||0)} ovo(s)`:""}</small></div><div className="dashboard-posture-female-count"><b>{item.posturas}</b><span>{item.posturas===1?"postura":"posturas"}</span><b>{item.eggs}</b><span>{item.eggs===1?"ovo":"ovos"}</span></div></div>)}</div>:<p className="dashboard-muted">Ainda não há posturas registradas para as fêmeas do plantel.</p>}
+  </div>
+  <div className="dashboard-posture-footer"><span>Indicadores baseados exclusivamente nos registros cadastrados.</span><Link href="/dashboard/calendario">Abrir gestão de reprodução <ArrowUpRight size={14}/></Link></div>
+ </section>
  <section className="dashboard-lower-grid">
   <div className="dashboard-panel dashboard-today"><div className="dashboard-panel-head"><div><span className="dashboard-eyebrow">ROTINA DO CRIATÓRIO</span><h2><Sparkles size={18}/> Hoje no seu criatório</h2><p>Alertas inteligentes e próximos compromissos.</p></div><Link href="/dashboard/calendario">Abrir calendário <ArrowUpRight size={14}/></Link></div>
    {smartAlerts.length||upcoming.length?<div className="dashboard-activity-list">{smartAlerts.slice(0,4).map((a:any)=><Link href="/dashboard/calendario" className="dashboard-activity" key={a.id}><span className="dashboard-activity-icon">{a.icon}</span><span><strong>{a.title}</strong><small>{a.detail}</small></span><span className="dashboard-activity-tag">Atenção</span></Link>)}{upcoming.slice(0,4).map((e:any)=><Link href="/dashboard/calendario" className="dashboard-activity" key={e.id}><span className="dashboard-activity-icon">{e.event_type==="postura"?"🥚":e.event_type==="nascimento"?"🐣":e.event_type==="anilhamento"?"🔖":e.event_type==="torneio"?"🏆":"❤️"}</span><span><strong>{e.title||"Evento do calendário"}</strong><small>{birdsById.get(e.bird_id)?.name||"Ave"} · {fmt(e.event_date)}</small></span><span className="dashboard-activity-date">{distance(todayKey,e.event_date)===0?"Hoje":distance(todayKey,e.event_date)===1?"Amanhã":`${distance(todayKey,e.event_date)} dias`}</span></Link>)}</div>:<div className="dashboard-empty"><CalendarDays size={24}/><strong>Tudo tranquilo por aqui!</strong><span>Seus próximos eventos e lembretes aparecerão neste espaço.</span><Link href="/dashboard/calendario">Adicionar evento</Link></div>}
   </div>
-  <div className="dashboard-panel"><div className="dashboard-panel-head"><div><span className="dashboard-eyebrow">VISÃO REPRODUTIVA</span><h2><Egg size={18}/> Resultados do criatório</h2><p>Indicadores com base nos registros do calendário.</p></div></div><div className="dashboard-repro-stats"><div><span>Posturas registradas</span><strong>{reproductivePosturas}</strong></div><div><span>Nascimentos registrados</span><strong>{reproductiveBirths}</strong></div><div><span>Ovos registrados</span><strong>{eggs}</strong></div><div><span>Filhotes registrados</span><strong>{hatchlings}</strong></div></div><div className="dashboard-note"><TrendingUp size={16}/><span>Indicadores baseados nos registros lançados no calendário, sem estimativas de produtividade.</span></div></div>
+  <div className="dashboard-panel"><div className="dashboard-panel-head"><div><span className="dashboard-eyebrow">VISÃO REPRODUTIVA</span><h2><Egg size={18}/> Resultados do criatório</h2><p>Indicadores com base nos registros do calendário.</p></div></div><div className="dashboard-repro-stats"><div><span>Nascimentos registrados</span><strong>{reproductiveBirths}</strong></div><div><span>Filhotes registrados</span><strong>{hatchlings}</strong></div></div><div className="dashboard-note"><TrendingUp size={16}/><span>Indicadores baseados nos registros lançados no calendário, sem estimativas de produtividade.</span></div></div>
  </section>
  <section className="dashboard-lower-grid dashboard-secondary-grid">
   <div className="dashboard-panel"><div className="dashboard-panel-head"><div><span className="dashboard-eyebrow">COMPOSIÇÃO</span><h2><Bird size={18}/> Espécies do plantel</h2></div><Link href="/dashboard/plantel">Ver aves <ArrowUpRight size={14}/></Link></div>{speciesSummary.length?<div className="dashboard-species-list">{speciesSummary.map(([name,count])=><div className="dashboard-species-row" key={name}><span>{name}</span><div><i style={{width:`${birdCount?count/birdCount*100:0}%`}}/></div><strong>{count}</strong></div>)}</div>:<p className="dashboard-muted">Cadastre espécies nas fichas das aves para visualizar esta distribuição.</p>}</div>

@@ -1149,3 +1149,26 @@ body{background:var(--bg);color:var(--text)}
 .partner-disclaimer{font-size:11px;line-height:1.5;color:#718078;margin:10px 0 20px}
 @media(max-width:900px){.fm-affiliate-catalog{grid-template-columns:1fr 1fr}.fm-affiliate-product{grid-template-columns:94px minmax(0,1fr)}.fm-product-image{height:100px}}
 @media(max-width:600px){.fm-affiliate-intro{grid-template-columns:76px minmax(0,1fr);padding:13px;gap:8px 12px}.fm-affiliate-intro .sponsor-logo-wrap{height:58px}.fm-affiliate-intro h3{font-size:16px}.fm-affiliate-intro p{font-size:11px;line-height:1.45}.fm-affiliate-note{font-size:10px}.fm-affiliate-catalog{grid-template-columns:1fr;gap:9px;margin-top:12px}.fm-affiliate-product{grid-template-columns:92px minmax(0,1fr);padding:9px;gap:10px}.fm-product-image{height:94px}.fm-product-copy h3{font-size:13px}.fm-product-copy p{font-size:10px}.fm-product-copy strong{font-size:10px}}
+
+
+/* Resumo de postura no dashboard principal */
+.dashboard-posture-card{background:linear-gradient(145deg,#fff 0%,#fbfdfb 100%);border:1px solid var(--line);border-radius:22px;padding:24px;margin:0 0 20px;min-width:0;box-shadow:0 10px 32px rgba(24,48,74,.045)}
+.dashboard-posture-card .dashboard-section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.dashboard-posture-card .dashboard-section-heading h2{font-size:20px;margin:4px 0;color:var(--text)}
+.dashboard-posture-card .dashboard-section-heading p{font-size:12px;color:var(--muted);margin:0}
+.dashboard-posture-overview{display:grid;grid-template-columns:minmax(280px,1fr) minmax(320px,1fr);gap:22px;align-items:center;margin-top:20px}
+.dashboard-posture-main{display:flex;align-items:center;gap:18px;min-width:0}
+.dashboard-posture-donut{width:140px;height:140px;flex:0 0 140px;border-radius:50%;display:grid;place-items:center;position:relative}
+.dashboard-posture-donut:before{content:"";position:absolute;inset:0;border-radius:50%;background:#fff;transform:scale(.76)}
+.dashboard-posture-donut>div{position:relative;display:grid;justify-items:center;gap:2px}
+.dashboard-posture-donut strong{font-size:31px;line-height:1;color:var(--text);letter-spacing:-.05em}
+.dashboard-posture-donut span{font-size:9px;color:var(--muted);letter-spacing:.08em}
+.dashboard-posture-copy{display:grid;gap:5px;min-width:0}.dashboard-posture-copy strong{font-size:14px;color:var(--text)}.dashboard-posture-copy span{font-size:12px;color:var(--muted);line-height:1.45}
+.dashboard-posture-stats{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.dashboard-posture-stats>div{background:#f3f7f4;border-radius:15px;padding:14px;display:grid;gap:5px;min-width:0}.dashboard-posture-stats>div.wide{grid-column:1/-1}
+.dashboard-posture-stats span{font-size:11px;color:var(--muted)}.dashboard-posture-stats strong{font-size:25px;line-height:1.05;color:#183d30;letter-spacing:-.04em}
+.dashboard-posture-females{border-top:1px solid #e5ece7;margin-top:19px;padding-top:15px}
+.dashboard-posture-females-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}.dashboard-posture-females-head>div{display:grid;gap:3px}.dashboard-posture-females-head strong{font-size:15px;color:var(--text)}.dashboard-posture-females-head span,.dashboard-posture-females-head small{font-size:11px;color:var(--muted)}
+.dashboard-posture-female-list{display:grid;gap:8px}.dashboard-posture-female{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid #e6eee9;border-radius:14px;padding:12px 14px;min-width:0}.dashboard-posture-female>div:first-child{display:grid;gap:3px;min-width:0}.dashboard-posture-female>div:first-child strong{font-size:13px;color:var(--text)}.dashboard-posture-female>div:first-child span,.dashboard-posture-female>div:first-child small{font-size:11px;color:var(--muted);overflow-wrap:anywhere}.dashboard-posture-female-count{display:grid;grid-template-columns:auto auto;align-items:baseline;column-gap:5px;flex:none}.dashboard-posture-female-count b{font-size:14px;color:#1e6749;text-align:right}.dashboard-posture-female-count span{font-size:10px;color:var(--muted)}
+.dashboard-posture-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px;font-size:10px;color:var(--muted)}.dashboard-posture-footer a{display:inline-flex;align-items:center;gap:4px;color:var(--primary-dark);font-weight:800;text-decoration:none;white-space:nowrap}
+@media(max-width:700px){.content:has(>.dashboard-insights)>.dashboard-posture-card{order:4;margin:0 0 12px;padding:18px;border-radius:18px}.content:has(>.dashboard-insights)>.dashboard-lower-grid{order:5}.content:has(>.dashboard-insights)>.dashboard-secondary-grid{order:6}.content:has(>.dashboard-insights)>.member-note{order:7}.content:has(>.dashboard-insights)>.grid3{order:8}.dashboard-posture-overview{grid-template-columns:1fr;gap:14px;margin-top:15px}.dashboard-posture-main{gap:14px}.dashboard-posture-donut{width:112px;height:112px;flex-basis:112px}.dashboard-posture-donut strong{font-size:27px}.dashboard-posture-stats{gap:8px}.dashboard-posture-stats>div{padding:12px}.dashboard-posture-stats strong{font-size:22px}.dashboard-posture-female{padding:11px;align-items:flex-start}.dashboard-posture-female-count{min-width:82px}.dashboard-posture-footer{align-items:flex-start;flex-direction:column;gap:7px}}
