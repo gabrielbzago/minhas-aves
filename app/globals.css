@@ -1075,3 +1075,51 @@ body{background:var(--bg);color:var(--text)}
 .public-payment-actions .btn-pix{background:#e8f5ee!important;color:#116b45!important;border:1px solid #8bc9a8!important;box-shadow:none!important}
 .public-payment-actions .btn-pix:hover{background:#d9efe3!important}
 @media(max-width:640px){.public-payment-actions{grid-template-columns:1fr!important;gap:8px!important}}
+
+
+/* Apollo 0.5.109 — Histórico e próximos compromissos: leitura mobile sem rolagem horizontal */
+@media (max-width: 700px) {
+  .history-commitments-section { min-width: 0; overflow: hidden; }
+  .history-commitments-table { overflow: visible; background: transparent; border: 0; box-shadow: none; }
+  .history-commitments-table table { width: 100% !important; min-width: 0 !important; table-layout: fixed; }
+  .history-commitments-table tbody { display: grid; gap: 12px; }
+  .history-commitments-table tbody tr {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: var(--shadow-soft);
+  }
+  .history-commitments-table tbody tr td {
+    display: grid;
+    grid-template-columns: minmax(94px, 36%) minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 2px;
+    border: 0;
+    text-align: left;
+    overflow-wrap: anywhere;
+    font-size: 12px;
+  }
+  .history-commitments-table tbody tr td:before {
+    content: attr(data-label);
+    display: block;
+    flex: none;
+    width: auto;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--muted);
+  }
+  .history-commitments-table tbody tr td[data-label="Ações"] {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+    margin-top: 4px;
+  }
+  .history-commitments-table tbody tr td[data-label="Ações"]:before { display: none; }
+}
