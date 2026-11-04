@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import VetPartnerWorkspace from "@/components/vet-partner-workspace";
+import VetProfileEditor from "@/components/vet-profile-editor";
 
 export default async function VetDashboard() {
   const { supabase, user } = await requireUser();
@@ -40,6 +41,7 @@ export default async function VetDashboard() {
         <div className="stat"><small>Consultas arquivadas</small><strong>{(consultations || []).filter((x: any) => x.status === "completed").length}</strong></div>
       </div>
 
+      <VetProfileEditor profile={vet}/>
       <VetPartnerWorkspace creators={creators || []} birds={birds || []} consultations={consultations || []} />
     </main>
   );

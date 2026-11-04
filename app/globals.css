@@ -1172,3 +1172,19 @@ body{background:var(--bg);color:var(--text)}
 .dashboard-posture-female-list{display:grid;gap:8px}.dashboard-posture-female{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid #e6eee9;border-radius:14px;padding:12px 14px;min-width:0}.dashboard-posture-female>div:first-child{display:grid;gap:3px;min-width:0}.dashboard-posture-female>div:first-child strong{font-size:13px;color:var(--text)}.dashboard-posture-female>div:first-child span,.dashboard-posture-female>div:first-child small{font-size:11px;color:var(--muted);overflow-wrap:anywhere}.dashboard-posture-female-count{display:grid;grid-template-columns:auto auto;align-items:baseline;column-gap:5px;flex:none}.dashboard-posture-female-count b{font-size:14px;color:#1e6749;text-align:right}.dashboard-posture-female-count span{font-size:10px;color:var(--muted)}
 .dashboard-posture-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px;font-size:10px;color:var(--muted)}.dashboard-posture-footer a{display:inline-flex;align-items:center;gap:4px;color:var(--primary-dark);font-weight:800;text-decoration:none;white-space:nowrap}
 @media(max-width:700px){.content:has(>.dashboard-insights)>.dashboard-posture-card{order:4;margin:0 0 12px;padding:18px;border-radius:18px}.content:has(>.dashboard-insights)>.dashboard-lower-grid{order:5}.content:has(>.dashboard-insights)>.dashboard-secondary-grid{order:6}.content:has(>.dashboard-insights)>.member-note{order:7}.content:has(>.dashboard-insights)>.grid3{order:8}.dashboard-posture-overview{grid-template-columns:1fr;gap:14px;margin-top:15px}.dashboard-posture-main{gap:14px}.dashboard-posture-donut{width:112px;height:112px;flex-basis:112px}.dashboard-posture-donut strong{font-size:27px}.dashboard-posture-stats{gap:8px}.dashboard-posture-stats>div{padding:12px}.dashboard-posture-stats strong{font-size:22px}.dashboard-posture-female{padding:11px;align-items:flex-start}.dashboard-posture-female-count{min-width:82px}.dashboard-posture-footer{align-items:flex-start;flex-direction:column;gap:7px}}
+
+/* Apollo 0.5.115 — Owner subscribers and veterinarian profile */
+.owner-plan-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.owner-plan-stat { cursor: pointer; text-align: left; border: 1px solid var(--border, #dbe3e8); width: 100%; font: inherit; }
+.owner-plan-stat span { display:block; margin-top:8px; color:var(--primary, #237b57); font-size:12px; font-weight:700; }
+.owner-plan-selected { outline:2px solid var(--primary, #237b57); outline-offset:1px; }
+.owner-plan-results { margin-top:18px; }
+.vet-home-feature { display:grid; grid-template-columns:minmax(180px, 280px) 1fr; gap:28px; align-items:center; }
+.vet-home-photo { width:100%; max-height:340px; object-fit:cover; object-position:center 25%; border-radius:18px; }
+.vet-profile-card { display:grid; grid-template-columns:minmax(180px,280px) 1fr; gap:24px; align-items:start; }
+.vet-profile-card .vet-photo { width:100%; max-height:360px; object-fit:cover; object-position:center 25%; border-radius:16px; }
+@media(max-width:760px) {
+ .owner-plan-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .vet-home-feature,.vet-profile-card { grid-template-columns:1fr; }
+ .vet-home-photo { max-width:260px; }
+}
