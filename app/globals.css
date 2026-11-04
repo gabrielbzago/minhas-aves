@@ -1188,3 +1188,29 @@ body{background:var(--bg);color:var(--text)}
  .vet-home-feature,.vet-profile-card { grid-template-columns:1fr; }
  .vet-home-photo { max-width:260px; }
 }
+
+
+/* Apollo 0.5.116 — perfil público completo do veterinário parceiro */
+.vet-public-intro{max-width:760px;color:var(--muted);font-size:17px;line-height:1.7;margin:12px 0 26px}
+.vet-public-profile{overflow:hidden;border:1px solid var(--border);border-radius:24px;background:#fff;box-shadow:var(--shadow-soft);margin:24px 0}
+.vet-public-hero{display:grid;grid-template-columns:minmax(220px,320px) 1fr;gap:30px;align-items:center;padding:28px;background:linear-gradient(135deg,#f2faf6,#fff)}
+.vet-public-photo{display:block;width:100%;height:360px;object-fit:cover;object-position:center 22%;border-radius:18px;border:1px solid var(--border)}
+.vet-public-label{display:inline-flex;padding:7px 11px;border-radius:999px;background:#e4f5ec;color:#176b49;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.vet-public-heading h2{font-size:clamp(30px,4vw,42px);line-height:1.1;margin:13px 0 8px}
+.vet-public-heading p{color:var(--muted);margin:6px 0}
+.vet-public-clinic{font-weight:700;color:var(--text)!important}
+.vet-public-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.vet-public-tags span{font-size:12px;font-weight:700;padding:8px 10px;border:1px solid #d7e9df;background:#fff;border-radius:999px;color:#28674c}
+.vet-public-section{padding:26px 30px;border-top:1px solid var(--border)}
+.vet-public-section h2{font-size:22px;margin:0 0 16px}
+.vet-public-bio p{line-height:1.8;color:var(--text);margin:0 0 14px}
+.vet-public-bio p:last-child{margin-bottom:0}
+.vet-public-section>p{line-height:1.75;color:var(--muted)}
+.vet-public-highlights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:20px}
+.vet-public-highlights>div,.vet-public-contact-grid>div{display:flex;flex-direction:column;gap:7px;padding:16px;border:1px solid var(--border);border-radius:14px;background:#fbfdfc}
+.vet-public-highlights strong{color:var(--primary-dark);font-size:14px}
+.vet-public-highlights span,.vet-public-contact-grid span{font-size:13px;line-height:1.6;color:var(--muted)}
+.vet-public-contact{background:#fbfdfc}
+.vet-public-contact-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.vet-public-contact-grid b{font-size:13px}
+@media(max-width:800px){.vet-public-hero{grid-template-columns:1fr;gap:18px;padding:18px}.vet-public-photo{height:auto;max-height:420px;object-position:center 20%}.vet-public-section{padding:22px 18px}.vet-public-highlights,.vet-public-contact-grid{grid-template-columns:1fr}}
