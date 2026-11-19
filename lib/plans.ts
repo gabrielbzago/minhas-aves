@@ -25,11 +25,11 @@ export const PLAN_ORDER: PlanCode[] = ["free", "amador", "profissional", "lenda"
 export const PLAN_BENEFITS: Record<PlanCode, string[]> = {
   free: [
     "Até 5 aves", "Cadastro e gestão das aves", "Histórico e genealogia",
-    "Pré-visualização do cartão de gaiola", "1 análise de plaquinha por mês com IA", "Agendamento veterinário", "Controle pelo celular",
+    "Impressão de cartões de gaiola para as aves liberadas no Grátis", "1 análise de plaquinha por mês com IA", "Agendamento veterinário", "Controle pelo celular",
   ],
   amador: [
     "Tudo do Grátis", "Plantel ilimitado", "Gestão de anilhas", "Fotos, documentos e gaiolas",
-    "Comportamento e registros avançados", "Cartões e impressões", "Impressão de ficha, plantel e genealogia", "Certificado genealógico individual com árvore até trisavós", "Cadastro inteligente de aves por foto (15 análises/mês)",
+    "Comportamento e registros avançados", "Impressão em lote de até 24 cartões", "Impressão de ficha, plantel e genealogia", "Certificado genealógico individual com árvore até trisavós", "Cadastro inteligente de aves por foto (15 análises/mês)",
   ],
   profissional: [
     "Tudo do Criatório Amador", "Gestão de reprodução", "Doenças e acompanhamento", "Medicamentos",

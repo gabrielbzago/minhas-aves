@@ -15,7 +15,7 @@ export const FEATURES: {code: FeatureCode; title: string; description: string; t
  {code:"comportamento",title:"Gestão de Comportamento",description:"Registre comportamento e observações periódicas.",tier:"amador"},
  {code:"genealogia",title:"Genealogia para Crachá e Folha A4",description:"Visualize a família e imprima a árvore genealógica.",tier:"free"},
  {code:"painel",title:"Painel de Dados",description:"Indicadores do plantel, espécies, sexo e status.",tier:"free"},
- {code:"cartao-gaiola",title:"Cartão de Gaiola",description:"Pré-visualize o cartão gratuitamente; a impressão é liberada nos planos pagos.",tier:"free"},
+ {code:"cartao-gaiola",title:"Cartão de Gaiola",description:"Imprima cartões para as aves liberadas no limite do plano Grátis; os planos pagos permitem impressão em lote de até 24 cartões.",tier:"free"},
  {code:"imprimir-ficha",title:"Imprimir ficha da ave",description:"Ficha completa em formato A4, com identidade do criatório, genealogia e histórico veterinário.",tier:"amador"},
  {code:"imprimir-plantel",title:"Imprimir plantel",description:"Lista organizada de todo o plantel para impressão.",tier:"amador"},
  {code:"certificado-genealogia",title:"Certificado genealógico",description:"Certificado individual A4 com árvore genealógica ampliada até trisavós. Disponível a partir do Criatório Amador.",tier:"amador"},
