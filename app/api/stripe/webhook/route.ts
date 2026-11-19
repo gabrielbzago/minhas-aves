@@ -64,8 +64,8 @@ async function applySubscriptionState(
 
   const entitled = isEntitledStatus(sub.status);
   const priceId = sub.items.data[0]?.price?.id || null;
-  const configuredPlan = priceId === process.env.STRIPE_PRICE_AMADOR ? "amador"
-    : priceId === process.env.STRIPE_PRICE_PROFISSIONAL ? "profissional"
+  const configuredPlan = priceId === process.env.STRIPE_PRICE_AMADOR || priceId === "price_1UdVsEAJ1L1ZXMWQ1myWx4Sk" ? "amador"
+    : priceId === process.env.STRIPE_PRICE_PROFISSIONAL || priceId === "price_1UdVsnAJ1L1ZXMWQkAwq6wYR" ? "profissional"
     : priceId === process.env.STRIPE_PRICE_LENDA ? "lenda" : null;
   const metadataPlan = ["amador", "profissional", "lenda"].includes(sub.metadata?.plan || "") ? sub.metadata!.plan! : null;
   const plan = (entitled || sub.status === "past_due") ? (configuredPlan || metadataPlan || "free") : "free";

@@ -18,8 +18,10 @@ export default function CadastroPage() {
   function getPostSignupPath() {
     const plan = getSelectedPlan();
     if (!plan) return "/dashboard";
-    const method = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("method") === "pix" ? "pix" : "card";
-    return `/api/stripe/checkout?plan=${plan}&method=${method}`;
+    const params = new URLSearchParams(window.location.search);
+    const method = params.get("method") === "pix" ? "pix" : "card";
+    const interval = params.get("interval") === "month" && ["amador", "profissional"].includes(plan) ? "&interval=month" : "";
+    return `/api/stripe/checkout?plan=${plan}&method=${method}${interval}`;
   }
   function getLoginHref() {
     const next = getPostSignupPath();

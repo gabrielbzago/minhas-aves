@@ -12,8 +12,8 @@ Nome interno do sistema: **Apollo — Gestão de Criatórios**
 
 ## Planos
 - Grátis: até 5 aves (+ bônus promocional se configurado)
-- Criatório Amador: R$ 149,90/ano, aves ilimitadas
-- Criatório Profissional: R$ 249,90/ano, aves ilimitadas
+- Criatório Amador: R$ 19,99/mês no cartão ou R$ 149,90/ano, aves ilimitadas
+- Criatório Profissional: R$ 34,99/mês no cartão ou R$ 249,90/ano, aves ilimitadas
 - Criador Lenda: R$ 349,90/ano, aves ilimitadas + 1 consulta veterinária para uma ave por período anual pago
 
 ## Veterinário parceiro
@@ -42,10 +42,12 @@ Ordem recomendada:
 4. `supabase/veterinario_setup_template.sql` depois de substituir os placeholders.
 
 ## Stripe
-Crie preços anuais e configure:
+Crie preços anuais e configure os Price IDs:
 - `STRIPE_PRICE_AMADOR`
 - `STRIPE_PRICE_PROFISSIONAL`
 - `STRIPE_PRICE_LENDA`
+
+Preços mensais no Stripe: Amador `price_1UdVsEAJ1L1ZXMWQ1myWx4Sk`; Profissional `price_1UdVsnAJ1L1ZXMWQkAwq6wYR`. O Lenda aceita somente cobrança anual, pois inclui uma consulta veterinária por período anual pago.
 
 Webhook recomendado:
 - checkout.session.completed

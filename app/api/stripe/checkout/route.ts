@@ -12,13 +12,20 @@ const PIX_PRICE_ENV: Record<string, string> = {
   profissional: "STRIPE_PRICE_PROFISSIONAL_PIX",
   lenda: "STRIPE_PRICE_LENDA_PIX",
 };
+const MONTHLY_CARD_PRICE: Record<string, string> = {
+  amador: "price_1UdVsEAJ1L1ZXMWQ1myWx4Sk",
+  profissional: "price_1UdVsnAJ1L1ZXMWQkAwq6wYR",
+};
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const plan = url.searchParams.get("plan") || "";
   const method = url.searchParams.get("method") || "card";
+  const interval = url.searchParams.get("interval") === "month" ? "month" : "year";
+  const isMonthly = method === "card" && interval === "month";
   const envName = method === "pix" ? PIX_PRICE_ENV[plan] : CARD_PRICE_ENV[plan];
-  if (!envName || !["card", "pix"].includes(method)) {
+  const validPlan = Object.prototype.hasOwnProperty.call(CARD_PRICE_ENV, plan);
+  if (!validPlan || (!envName && !isMonthly) || !["card", "pix"].includes(method) || (isMonthly && !Object.prototype.hasOwnProperty.call(MONTHLY_CARD_PRICE, plan)) || (method === "pix" && interval !== "year")) {
     return NextResponse.json({ error: "Plano ou forma de pagamento inválida." }, { status: 400 });
   }
 
@@ -44,18 +51,18 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL("/dashboard/assinatura?checkout=manage_subscription_first", url.origin), 303);
     }
 
-    const price = process.env[envName];
-    if (!price || !price.startsWith("price_")) {
+    const price = isMonthly ? MONTHLY_CARD_PRICE[plan] : (envName ? process.env[envName] : undefined);
+    if (!isMonthly && (!price || !price.startsWith("price_"))) {
       return NextResponse.json({ error: `${envName} não configurada com um Price ID válido (price_...).` }, { status: 500 });
     }
 
     const stripe = getStripe();
     const common = {
-      line_items: [{ price, quantity: 1 }],
+      line_items: [{ price: price!, quantity: 1 }],
       client_reference_id: user.id,
       customer: profile?.stripe_customer_id || undefined,
       customer_email: profile?.stripe_customer_id ? undefined : (user.email || undefined),
-      metadata: { user_id: user.id, plan, payment_method: method },
+      metadata: { user_id: user.id, plan, payment_method: method, billing_interval: isMonthly ? "month" : "year" },
       success_url: `${url.origin}/dashboard/assinatura?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${url.origin}/dashboard/assinatura?checkout=cancelled`,
     };
@@ -70,7 +77,7 @@ export async function GET(request: Request) {
       : await stripe.checkout.sessions.create({
           ...common,
           mode: "subscription",
-          subscription_data: { metadata: { user_id: user.id, plan, payment_method: "card" } },
+          subscription_data: { metadata: { user_id: user.id, plan, payment_method: "card", billing_interval: isMonthly ? "month" : "year" } },
           allow_promotion_codes: true,
         });
 
@@ -79,7 +86,7 @@ export async function GET(request: Request) {
   } catch (err) {
     if (err instanceof Error && err.message === "UNAUTHENTICATED") {
       const login = new URL("/login", url.origin);
-      login.searchParams.set("next", `/api/stripe/checkout?plan=${encodeURIComponent(plan)}&method=${encodeURIComponent(method)}`);
+      login.searchParams.set("next", `/api/stripe/checkout?plan=${encodeURIComponent(plan)}&method=${encodeURIComponent(method)}&interval=${encodeURIComponent(interval)}`);
       return NextResponse.redirect(login, 303);
     }
     console.error("[Stripe checkout]", err);

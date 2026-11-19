@@ -36,9 +36,12 @@ Depois, configure Authentication > URL Configuration:
 
 ## 3. Stripe
 
-Crie dois produtos recorrentes:
+Crie os preços anuais no Stripe:
 - Criatório Amador — R$ 149,90/ano
 - Criatório Profissional — R$ 249,90/ano
+- Criador Lenda — R$ 349,90/ano
+
+Os preços mensais são configurados pelos Price IDs `price_1UdVsEAJ1L1ZXMWQ1myWx4Sk` (Amador) e `price_1UdVsnAJ1L1ZXMWQkAwq6wYR` (Profissional). O Lenda permanece exclusivamente anual porque inclui uma consulta veterinária por período anual pago.
 
 Copie os Price IDs para:
 `STRIPE_PRICE_AMADOR`
@@ -64,11 +67,11 @@ O webhook verifica a assinatura usando o corpo bruto da requisição.
 ## 5. Preços comerciais de lançamento
 
 - Grátis: até 5 aves.
-- Criatório Amador: R$ 149,90/ano, plantel ilimitado.
-- Criatório Profissional: R$ 249,90/ano, plantel ilimitado, com acesso aos módulos profissionais.
+- Criatório Amador: R$ 19,99/mês no cartão ou R$ 149,90/ano, plantel ilimitado.
+- Criatório Profissional: R$ 34,99/mês no cartão ou R$ 249,90/ano, plantel ilimitado, com acesso aos módulos profissionais.
 - Membros elegíveis do canal podem receber bônus de até 10 aves mediante validação manual.
 
-Os valores exibidos na interface são os preços comerciais sugeridos para o lançamento. No Stripe, crie os produtos anuais com esses valores e cole os Price IDs no `.env.local`.
+Os valores exibidos na interface são os preços comerciais sugeridos para o lançamento. No Stripe, crie os preços anuais e cole os Price IDs no `.env.local`; os dois preços mensais já estão associados aos Price IDs indicados acima.
 
 O limite de 5 aves do plano Grátis é protegido no banco pelo trigger `check_bird_limit`. Os planos pagos não possuem limite de quantidade de aves; a diferenciação comercial é feita pelo conjunto de funcionalidades.
 
