@@ -1076,6 +1076,26 @@ body{background:var(--bg);color:var(--text)}
 .public-payment-actions .btn-pix:hover{background:#d9efe3!important}
 @media(max-width:640px){.public-payment-actions{grid-template-columns:1fr!important;gap:8px!important}}
 
+/* Pricing: monthly headline with a clear discounted annual alternative. */
+.plan-pricing{margin:18px 0 14px}
+.plan-period{display:block;color:#64786e;font-size:10px;font-weight:900;letter-spacing:.09em}
+.plan-month-price{margin-top:5px;color:#0d1b2a;font-size:42px;font-weight:850;letter-spacing:-.045em;line-height:1.08}
+.plan-month-price small{font-size:15px;font-weight:700;letter-spacing:0;color:#64786e}
+.plan-month-caption{margin-top:5px;color:#64786e;font-size:12px}
+.annual-offer{margin:0 0 12px;padding:13px 14px;border:1px solid #dce9e2;border-radius:14px;background:#f6faf8}
+.annual-offer-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#496456;font-size:9px;font-weight:900;letter-spacing:.055em}
+.annual-offer-heading b{padding:5px 7px;border-radius:999px;background:#dff3e8;color:#167247;font-size:9px;letter-spacing:0;white-space:nowrap}
+.annual-offer-price{display:flex;align-items:baseline;gap:10px;margin-top:9px;flex-wrap:wrap}
+.annual-offer-price s{color:#87938d;font-size:13px;font-weight:600}
+.annual-offer-price strong{color:#123b2a;font-size:20px;font-weight:850}
+.annual-offer-price small{font-size:12px;color:#64786e}
+.public-payment-actions.plan-ctas,.payment-choice.plan-ctas{display:grid!important;grid-template-columns:1fr!important;gap:9px!important;margin:14px 0 0!important}
+.plan-ctas .btn{min-height:48px!important}
+.plan-ctas .btn-soft{border:1px solid #d7e4dd!important;background:#f8fbf9!important;color:#173b2b!important}
+.plan-pix-link{display:block;text-align:center;color:#176b4b;font-size:12px;font-weight:750;padding:3px 0;text-decoration:underline;text-underline-offset:3px}
+.dashboard-plans{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:700px){.dashboard-plans{grid-template-columns:1fr}.plan-month-price{font-size:39px}}
+
 
 /* Apollo 0.5.109 — Histórico e próximos compromissos: leitura mobile sem rolagem horizontal */
 @media (max-width: 700px) {
